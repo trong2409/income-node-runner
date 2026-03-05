@@ -1,0 +1,11 @@
+#Add your proxies below in each line in the format protocol://username:password@ip:port or protocol://ip:port
+protocol://username:password@ip:port
+protocol://username:password@ip:port
+protocol://username:password@ip:port
+protocol://username:password@ip:port
+protocol://username:password@ip:port
+protocol://username:password@ip:port
+protocol://username:password@ip:port
+protocol://username:password@ip:port
+protocol://username:password@ip:port
+protocol://username:password@ip:portprotocol://username:password@ip:port
