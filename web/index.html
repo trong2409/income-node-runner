@@ -335,7 +335,7 @@
     <div class="tabs">
       <div class="tab active" data-tab="proxy" onclick="switchTab('proxy')">Manage proxies</div>
       <div class="tab" data-tab="node" onclick="switchTab('node')">Manage nodes</div>
-      <div class="tab" data-tab="earnapp-search" onclick="switchTab('earnapp-search')">Tìm node (EarnApp ID)</div>
+      <div class="tab" data-tab="earnapp-search" onclick="switchTab('earnapp-search')">Find node (EarnApp ID)</div>
     </div>
 
     <div id="panel-proxy" class="tab-panel active">
@@ -427,8 +427,8 @@
 
     <div id="panel-earnapp-search" class="tab-panel">
       <section>
-        <h2 style="margin: 0 0 8px; font-size: 1rem">Tìm node theo EarnApp Node ID</h2>
-        <p style="margin:0 0 8px;font-size:12px;color:#888">Nhập chuỗi EarnApp node ID (ví dụ: sdk-node-ec36428689fe3baacfffcc3e35bee8b0). Sẽ hiển thị các node có link EarnApp chứa chuỗi này.</p>
+        <h2 style="margin: 0 0 8px; font-size: 1rem">Find node by EarnApp Node ID</h2>
+        <p style="margin:0 0 8px;font-size:12px;color:#888">Enter EarnApp node ID string (e.g. sdk-node-ec36428689fe3baacfffcc3e35bee8b0). Nodes whose EarnApp link contains this string will be shown.</p>
         <div class="bar" style="align-items: center; gap: 8px; flex-wrap: wrap;">
           <label style="margin: 0; flex: 0 0 auto;">EarnApp Node ID:</label>
           <input
@@ -437,8 +437,8 @@
             placeholder="sdk-node-ec36428689fe3baacfffcc3e35bee8b0"
             style="max-width: 360px;"
           />
-          <button class="primary" onclick="searchEarnAppNodes()">Tìm</button>
-          <button onclick="loadNodes().then(function(){ searchEarnAppNodes(); })">Refresh &amp; tìm lại</button>
+          <button class="primary" onclick="searchEarnAppNodes()">Search</button>
+          <button onclick="loadNodes().then(function(){ searchEarnAppNodes(); })">Refresh &amp; search again</button>
         </div>
         <div id="earnapp-search-result-wrap" style="margin-top: 12px;">
           <table>
@@ -581,7 +581,7 @@
         const tbody = document.getElementById("earnappSearchResult");
         const msgEl = document.getElementById("earnappSearchMsg");
         if (!term) {
-          tbody.innerHTML = '<tr><td colspan="5" style="color:#888">Nhập EarnApp Node ID (ví dụ: sdk-node-ec36428689fe3baacfffcc3e35bee8b0) rồi bấm Tìm.</td></tr>';
+          tbody.innerHTML = '<tr><td colspan="5" style="color:#888">Enter EarnApp Node ID (e.g. sdk-node-ec36428689fe3baacfffcc3e35bee8b0) then click Search.</td></tr>';
           msgEl.textContent = "";
           return;
         }
@@ -591,8 +591,8 @@
           return earnapp.toLowerCase().includes(lower);
         });
         if (matched.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="5" style="color:#888">Không tìm thấy node nào có EarnApp link chứa chuỗi này.</td></tr>';
-          msgEl.textContent = "Không tìm thấy node nào.";
+          tbody.innerHTML = '<tr><td colspan="5" style="color:#888">No nodes found with EarnApp link containing this string.</td></tr>';
+          msgEl.textContent = "No nodes found.";
         } else {
           tbody.innerHTML = matched
             .map((n) => {
@@ -614,7 +614,7 @@
               </tr>`;
             })
             .join("");
-          msgEl.textContent = "Tìm thấy " + matched.length + " node.";
+          msgEl.textContent = "Found " + matched.length + " node(s).";
         }
       }
       async function loadNodes() {
