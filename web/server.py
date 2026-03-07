@@ -8,16 +8,19 @@ import base64
 import hashlib
 import hmac
 import json
+import math
 import os
 import subprocess
 import tempfile
 import time
+from datetime import datetime, timezone
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import parse_qs, urlparse
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MAIN_SH = os.path.join(ROOT, "main.sh")
 PROXY_FILE = os.path.join(ROOT, "proxies.txt")
+PROXY_META_FILE = os.path.join(ROOT, "runtime", "proxy-meta.json")
 RUNTIME_DIR = os.path.join(ROOT, "runtime")
 WEB_DIR = os.path.dirname(os.path.abspath(__file__))
 CONFIG_PATH = os.path.join(WEB_DIR, "config.json")
@@ -111,7 +114,7 @@ def run_main(args):
             cwd=ROOT,
             capture_output=True,
             text=True,
-            timeout=120,
+            timeout=60 * 60,
         )
         out = (r.stdout or "") + (r.stderr or "")
         return r.returncode == 0, out.strip()
@@ -146,6 +149,63 @@ def read_proxies():
             if line and not line.startswith("#"):
                 lines.append(line)
         return lines
+
+
+def _now_iso():
+    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def read_proxy_meta():
+    """Return dict: {proxy_string: {"created_at": "..."}, ...}."""
+    if not os.path.isfile(PROXY_META_FILE):
+        return {}
+    try:
+        with open(PROXY_META_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+
+def write_proxy_meta(data):
+    with open(PROXY_META_FILE, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=0)
+
+
+def ensure_proxy_meta(proxies, meta=None):
+    """Ensure every proxy in the list has an entry in proxy-meta. Returns updated meta dict."""
+    if meta is None:
+        meta = read_proxy_meta()
+    changed = False
+    now = _now_iso()
+    for p in proxies:
+        if p not in meta:
+            meta[p] = {"created_at": now}
+            changed = True
+    if changed:
+        write_proxy_meta(meta)
+    return meta
+
+
+def remove_proxy_meta(proxies):
+    """Remove proxies from proxy-meta.json."""
+    meta = read_proxy_meta()
+    changed = False
+    for p in proxies:
+        norm = p.strip()
+        if norm in meta:
+            del meta[norm]
+            changed = True
+    if changed:
+        write_proxy_meta(meta)
+
+
+def paginate(items, page, per_page):
+    """Return (page_items, total, pages)."""
+    total = len(items)
+    pages = max(1, math.ceil(total / per_page))
+    page = max(1, min(page, pages))
+    start = (page - 1) * per_page
+    return items[start : start + per_page], total, page, pages
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -227,16 +287,55 @@ class Handler(BaseHTTPRequestHandler):
                 self._send_unauthorized()
                 return
             if path == "/api/me":
-                self.send_json({"ok": True, "user": user} if user else {"ok": False}, 200 if user else 401)
+                self.send_json(
+                    {"ok": True, "user": user} if user else {"ok": False},
+                    200 if user else 401,
+                )
                 return
 
         if path == "/api/nodes":
+            qs = parse_qs(urlparse(self.path).query)
             ok, out = run_main(["--list-nodes"])
             nodes = parse_list_nodes(out) if ok else []
             for n in nodes:
                 meta = read_node_meta(n["id"])
                 n["meta"] = meta
-            self.send_json({"nodes": nodes, "raw": out})
+
+            search = (qs.get("search") or [""])[0].strip().lower()
+            if search:
+                nodes = [n for n in nodes if search in n.get("proxy", "").lower()]
+
+            status_filter = (qs.get("status") or ["all"])[0]
+            if status_filter in ("active", "inactive"):
+                nodes = [
+                    n
+                    for n in nodes
+                    if (n.get("meta") or {}).get("status") == status_filter
+                ]
+
+            sort_field = (qs.get("sort") or ["created_at"])[0]
+            sort_desc = (qs.get("sort_dir") or ["desc"])[0] == "desc"
+            if sort_field == "created_at":
+                nodes.sort(
+                    key=lambda n: (n.get("meta") or {}).get("created_at") or "",
+                    reverse=sort_desc,
+                )
+            else:
+                nodes.sort(key=lambda n: n.get("id", ""), reverse=sort_desc)
+
+            page = int((qs.get("page") or ["1"])[0])
+            per_page = int((qs.get("per_page") or ["20"])[0])
+            page_nodes, total, page, pages = paginate(nodes, page, per_page)
+            self.send_json(
+                {
+                    "nodes": page_nodes,
+                    "total": total,
+                    "page": page,
+                    "per_page": per_page,
+                    "pages": pages,
+                    "raw": out,
+                }
+            )
             return
         if path.startswith("/api/node/") and path.endswith("/meta"):
             parts = path.split("/")
@@ -258,11 +357,36 @@ class Handler(BaseHTTPRequestHandler):
                 if not container:
                     self.send_json({"error": "container required"}, 400)
                     return
-                ok, out = run_main(["--container-logs", node_id, container, "--tail", str(tail)])
+                ok, out = run_main(
+                    ["--container-logs", node_id, container, "--tail", str(tail)]
+                )
                 self.send_text(out)
                 return
         if path == "/api/proxies":
-            self.send_json({"proxies": read_proxies()})
+            qs = parse_qs(urlparse(self.path).query)
+            raw_proxies = read_proxies()
+            meta = ensure_proxy_meta(raw_proxies)
+            items = [
+                {"proxy": p, "created_at": meta.get(p, {}).get("created_at", "")}
+                for p in raw_proxies
+            ]
+            search = (qs.get("search") or [""])[0].strip().lower()
+            if search:
+                items = [x for x in items if search in x["proxy"].lower()]
+            sort_desc = (qs.get("sort_dir") or ["desc"])[0] == "desc"
+            items.sort(key=lambda x: x.get("created_at") or "", reverse=sort_desc)
+            page = int((qs.get("page") or ["1"])[0])
+            per_page = int((qs.get("per_page") or ["20"])[0])
+            page_items, total, page, pages = paginate(items, page, per_page)
+            self.send_json(
+                {
+                    "proxies": page_items,
+                    "total": total,
+                    "page": page,
+                    "per_page": per_page,
+                    "pages": pages,
+                }
+            )
             return
         self.send_json({"error": "Not found"}, 404)
 
@@ -275,10 +399,16 @@ class Handler(BaseHTTPRequestHandler):
             try:
                 data = json.loads(body) if body else {}
                 username = (data.get("username") or "").strip()
-                password = (data.get("password") or "")
+                password = data.get("password") or ""
                 cfg = self._config()
-                if not username or cfg.get("username") != username or cfg.get("password") != password:
-                    self.send_json({"ok": False, "error": "Invalid username or password"}, 401)
+                if (
+                    not username
+                    or cfg.get("username") != username
+                    or cfg.get("password") != password
+                ):
+                    self.send_json(
+                        {"ok": False, "error": "Invalid username or password"}, 401
+                    )
                     return
                 secret = cfg.get("session_secret") or ""
                 cookie_val = create_session(username, secret)
@@ -290,7 +420,9 @@ class Handler(BaseHTTPRequestHandler):
                     f"{SESSION_COOKIE_NAME}={cookie_val}; Path=/; Max-Age={SESSION_MAX_AGE}; HttpOnly; SameSite=Lax",
                 )
                 self.end_headers()
-                self.wfile.write(json.dumps({"ok": True, "user": username}).encode("utf-8"))
+                self.wfile.write(
+                    json.dumps({"ok": True, "user": username}).encode("utf-8")
+                )
             except json.JSONDecodeError:
                 self.send_json({"ok": False, "error": "Invalid JSON"}, 400)
             return
@@ -317,6 +449,8 @@ class Handler(BaseHTTPRequestHandler):
                 if not isinstance(args, list):
                     args = [str(args)]
                 ok, out = run_main(args)
+                if ok and "--setup-node" in args:
+                    ensure_proxy_meta(read_proxies())
                 self.send_json({"ok": ok, "output": out})
             except json.JSONDecodeError:
                 self.send_json({"ok": False, "output": "Invalid JSON"}, 400)
@@ -330,6 +464,8 @@ class Handler(BaseHTTPRequestHandler):
                     self.send_json({"ok": False, "output": "No proxies"}, 400)
                     return
                 ok, out = run_main(["--add-proxy"] + [str(p) for p in proxies])
+                if ok:
+                    ensure_proxy_meta([str(p).strip() for p in proxies])
                 self.send_json({"ok": ok, "output": out})
             except json.JSONDecodeError:
                 self.send_json({"ok": False, "output": "Invalid JSON"}, 400)
@@ -343,6 +479,8 @@ class Handler(BaseHTTPRequestHandler):
                     self.send_json({"ok": False, "output": "No proxies"}, 400)
                     return
                 ok, out = run_main(["--remove-proxy"] + [str(p) for p in proxies])
+                if ok:
+                    remove_proxy_meta([str(p) for p in proxies])
                 self.send_json({"ok": ok, "output": out})
             except json.JSONDecodeError:
                 self.send_json({"ok": False, "output": "Invalid JSON"}, 400)
@@ -352,11 +490,20 @@ class Handler(BaseHTTPRequestHandler):
             if not body or not body.strip():
                 self.send_json({"ok": False, "output": "Empty file"}, 400)
                 return
-            with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as f:
+            imported_proxies = [
+                line.strip()
+                for line in body.splitlines()
+                if line.strip() and not line.strip().startswith("#")
+            ]
+            with tempfile.NamedTemporaryFile(
+                mode="w", suffix=".txt", delete=False
+            ) as f:
                 f.write(body)
                 tmp = f.name
             try:
                 ok, out = run_main(["--import-proxy", tmp])
+                if ok:
+                    ensure_proxy_meta(imported_proxies)
                 self.send_json({"ok": ok, "output": out})
             finally:
                 try:
@@ -367,13 +514,19 @@ class Handler(BaseHTTPRequestHandler):
 
         if path.startswith("/api/node/") and "/restart-container" in path:
             parts = path.split("/")
-            if len(parts) >= 5 and parts[2] == "node" and parts[4] == "restart-container":
+            if (
+                len(parts) >= 5
+                and parts[2] == "node"
+                and parts[4] == "restart-container"
+            ):
                 node_id = parts[3]
                 try:
                     data = json.loads(body) if body else {}
                     container = data.get("container") or ""
                     if not container:
-                        self.send_json({"ok": False, "output": "container required"}, 400)
+                        self.send_json(
+                            {"ok": False, "output": "container required"}, 400
+                        )
                         return
                     ok, out = run_main(["--container-restart", node_id, container])
                     self.send_json({"ok": ok, "output": out})

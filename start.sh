@@ -49,12 +49,28 @@ start_server() {
   exec python3 "$SCRIPT_DIR/web/server.py"
 }
 
+# --- Migrate: backfill created_at for nodes and proxy-meta.json ---
+run_migrate() {
+  if [ ! -d "$RUNTIME_DIR" ]; then
+    echo "[start.sh] No runtime/ directory found. Nothing to migrate."
+    return
+  fi
+  echo "[start.sh] Running migration..."
+  python3 "$SCRIPT_DIR/web/node_meta.py" migrate "$RUNTIME_DIR"
+  echo "[start.sh] Migration complete."
+}
+
 # --- Main ---
 case "${1:-}" in
   --fix-only)
     fix_runtime_permission
     echo ""
     echo "Done (permissions only). To start server: ./start.sh"
+    ;;
+  --migrate)
+    fix_runtime_permission
+    echo ""
+    run_migrate
     ;;
   --background)
     fix_runtime_permission

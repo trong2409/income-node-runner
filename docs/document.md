@@ -13,6 +13,7 @@ income-node-runner/
 ├── properties.conf      # Shared config for all nodes
 ├── source/              # Template directory copied for each node
 ├── runtime/             # (auto-created) Contains all nodes
+│   ├── proxy-meta.json      # Proxy metadata (created_at per proxy, auto-managed)
 │   ├── node-7f3a9b2c/   # ID = hash of proxy
 │   │   ├── node-meta.json   # meta: name, proxy, earnapp_link, containers[], status
 │   │   ├── proxies.txt
@@ -152,11 +153,26 @@ Each node has **`node-meta.json`** (auto-created/updated):
 - **earnapp_link**: EarnApp link (if any, from `earnapp.txt`)
 - **containers**: list of Docker container names (from `containernames.txt`)
 - **status**: `active` or `inactive`
+- **created_at**: ISO 8601 UTC timestamp (e.g. `2026-03-07T12:00:00Z`). Set once on first creation; preserved across subsequent writes (start/stop/setup).
 
 - On **start**: set `status=active`, reread `containernames.txt` and `earnapp.txt` and write to meta.
 - On **stop**: set `status=inactive`.
 
 Script `web/node_meta.py` is used to write/refresh meta (called from `main.sh`).
+
+### Proxy meta (`proxy-meta.json`)
+
+Root-level file mapping each proxy string to metadata:
+
+```json
+{
+  "socks5://user:pass@1.2.3.4:1080": { "created_at": "2026-03-07T12:00:00Z" }
+}
+```
+
+- **created_at**: ISO 8601 UTC timestamp. Set when the proxy is first added (via web UI, `--add-proxy`, `--import-proxy`, or `--setup-node`). Preserved on subsequent operations.
+- Maintained by `server.py`; entries are removed when a proxy is deleted.
+- Stored in `runtime/` (already in `.gitignore`).
 
 ### `--container-logs <id> <container> [--tail N]`
 
@@ -209,6 +225,7 @@ The `start.sh` script will:
 
 Options:
 - `./start.sh --fix-only` — Only fix `runtime/` permissions; do not start server
+- `./start.sh --migrate` — Backfill `created_at` into all existing `node-meta.json` files and build `runtime/proxy-meta.json` from existing nodes. Run once after upgrading.
 - `./start.sh --background` — Fix permissions then run server in background (log to `web/server.log`)
 
 ### Running the server manually
@@ -221,8 +238,30 @@ python3 web/server.py
 Open in browser: **http://127.0.0.1:8765**
 
 - **Requirements**: Python 3 (no extra packages).
-- **Features**: View nodes & proxies; Setup / Start all / Stop all / Delete all; Start/Stop/Delete per node; Add/Remove proxy.
+- **Features**: View nodes & proxies; Setup / Start all / Stop all / Delete all; Start/Stop/Delete per node; Add/Remove proxy; Filter nodes by status; Pagination for both lists.
 - **Port**: Default 8765; override with `PORT=3000 ./start.sh` or `PORT=3000 python3 web/server.py`.
+
+### API query parameters
+
+**`GET /api/nodes`**
+
+| Param | Default | Description |
+|-------|---------|-------------|
+| `status` | `all` | Filter by status: `all`, `active`, `inactive` |
+| `sort` | `created_at` | Sort field: `created_at` (latest first) or `id` |
+| `page` | `1` | Page number (1-based) |
+| `per_page` | `20` | Items per page |
+
+Response: `{ nodes: [...], total, page, per_page, pages, raw }`
+
+**`GET /api/proxies`**
+
+| Param | Default | Description |
+|-------|---------|-------------|
+| `page` | `1` | Page number (1-based) |
+| `per_page` | `20` | Items per page |
+
+Response: `{ proxies: [{proxy, created_at}, ...], total, page, per_page, pages }`
 
 ---
 

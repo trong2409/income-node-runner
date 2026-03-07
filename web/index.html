@@ -324,6 +324,52 @@
       @keyframes loading-spin {
         to { transform: rotate(360deg); }
       }
+      .pagination {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 10px;
+        font-size: 13px;
+        color: #888;
+      }
+      .pagination button {
+        padding: 4px 10px;
+        font-size: 12px;
+      }
+      .pagination button:disabled {
+        opacity: 0.4;
+        cursor: default;
+      }
+      .filter-bar {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+      }
+      .filter-bar select {
+        background: #25252a;
+        border: 1px solid #444;
+        color: #e2e2e6;
+        padding: 5px 8px;
+        border-radius: 6px;
+        font-size: 13px;
+      }
+      td.date {
+        font-size: 11px;
+        color: #888;
+        white-space: nowrap;
+      }
+      th.sortable {
+        cursor: pointer;
+        user-select: none;
+      }
+      th.sortable:hover {
+        color: #c8c8ce;
+      }
+      th.sortable .sort-arrow {
+        margin-left: 3px;
+        font-size: 10px;
+      }
     </style>
   </head>
   <body>
@@ -354,9 +400,15 @@
           <span id="proxyValidate" class="validate-msg"></span>
         </div>
         <div id="proxies-wrap" style="margin-top: 12px">
-          <div class="bar" style="margin-bottom: 8px">
-            <span style="color: #888">Select multiple:</span>
-            <button class="danger" onclick="deleteSelectedProxies()">Delete</button>
+          <div class="bar" style="margin-bottom: 8px; justify-content: space-between">
+            <div class="bar" style="margin:0">
+              <button onclick="loadProxies()">Refresh</button>
+              <input type="text" id="proxySearchInput" placeholder="Search proxy..." style="width:200px" onkeydown="if(event.key==='Enter'){proxyCurrentPage=1;loadProxies()}" />
+              <button onclick="proxyCurrentPage=1;loadProxies()">Search</button>
+            </div>
+            <div class="bar" style="margin:0">
+              <button class="danger" onclick="deleteSelectedProxies()">Delete selected</button>
+            </div>
           </div>
           <table>
             <thead>
@@ -365,11 +417,12 @@
                   <input type="checkbox" id="selectAllProxies" onclick="toggleSelectAllProxies(this)" title="Select all" />
                 </th>
                 <th>Proxy</th>
-                <th></th>
+                <th class="sortable" onclick="proxySortDesc=!proxySortDesc;proxyCurrentPage=1;loadProxies()">Created <span class="sort-arrow" id="proxySortArrow">▼</span></th>
               </tr>
             </thead>
             <tbody id="proxies"></tbody>
           </table>
+          <div id="proxiesPagination" class="pagination"></div>
         </div>
       </section>
     </div>
@@ -393,13 +446,26 @@
       </section>
       <section>
         <h2 style="margin: 0 0 8px; font-size: 1rem">Nodes</h2>
-        <div class="bar">
-          <button onclick="loadNodes()">Refresh</button>
-          <span style="margin-left: 8px; color: #888">Select multiple:</span>
-          <button onclick="runSelected('start')">Start</button>
-          <button onclick="runSelected('stop')">Stop</button>
-          <button class="danger" onclick="runSelected('delete')">Delete</button>
-          <button onclick="runSelected('restart')">Restart</button>
+        <div class="bar" style="justify-content: space-between">
+          <div class="bar" style="margin:0">
+            <button onclick="loadNodes()">Refresh</button>
+            <input type="text" id="nodeSearchInput" placeholder="Search proxy..." style="width:200px" onkeydown="if(event.key==='Enter'){nodeCurrentPage=1;loadNodes()}" />
+            <button onclick="nodeCurrentPage=1;loadNodes()">Search</button>
+            <div class="filter-bar">
+              <label style="margin:0;color:#888">Status:</label>
+              <select id="nodeStatusFilter" onchange="nodeCurrentPage=1;loadNodes()">
+                <option value="all">All</option>
+                <option value="active">Running</option>
+                <option value="inactive">Stopped</option>
+              </select>
+            </div>
+          </div>
+          <div class="bar" style="margin:0">
+            <button onclick="runSelected('start')">Start</button>
+            <button onclick="runSelected('stop')">Stop</button>
+            <button onclick="runSelected('restart')">Restart</button>
+            <button class="danger" onclick="runSelected('delete')">Delete</button>
+          </div>
         </div>
         <div id="nodes-wrap">
           <table>
@@ -416,11 +482,12 @@
                 <th>ID</th>
                 <th>Proxy</th>
                 <th>Status</th>
-                <th></th>
+                <th class="sortable" onclick="nodeSortDesc=!nodeSortDesc;nodeCurrentPage=1;loadNodes()">Created <span class="sort-arrow" id="nodeSortArrow">▼</span></th>
               </tr>
             </thead>
             <tbody id="nodes"></tbody>
           </table>
+          <div id="nodesPagination" class="pagination"></div>
         </div>
       </section>
     </div>
@@ -576,6 +643,26 @@
         }
       }
       let nodesList = [];
+      let nodeCurrentPage = 1;
+      const nodePerPage = 20;
+      let nodeSortDesc = true;
+      let proxyCurrentPage = 1;
+      const proxyPerPage = 20;
+      let proxySortDesc = true;
+
+      function renderPagination(containerId, info, onPageChange) {
+        const el = document.getElementById(containerId);
+        if (!el || !info || info.pages <= 1) { if (el) el.innerHTML = ""; return; }
+        const prevDisabled = info.page <= 1 ? "disabled" : "";
+        const nextDisabled = info.page >= info.pages ? "disabled" : "";
+        el.innerHTML =
+          '<button ' + prevDisabled + ' onclick="void 0" class="pg-prev">Prev</button>' +
+          '<span>Page ' + info.page + ' / ' + info.pages + ' (' + info.total + ' total)</span>' +
+          '<button ' + nextDisabled + ' onclick="void 0" class="pg-next">Next</button>';
+        el.querySelector(".pg-prev").onclick = function () { if (info.page > 1) onPageChange(info.page - 1); };
+        el.querySelector(".pg-next").onclick = function () { if (info.page < info.pages) onPageChange(info.page + 1); };
+      }
+
       function searchEarnAppNodes() {
         const term = (document.getElementById("earnappSearchInput").value || "").trim();
         const tbody = document.getElementById("earnappSearchResult");
@@ -620,7 +707,13 @@
       async function loadNodes() {
         setLoading(true);
         try {
-          const data = await get("/api/nodes");
+          const statusFilter = document.getElementById("nodeStatusFilter").value || "all";
+          const sortDir = nodeSortDesc ? "desc" : "asc";
+          const nodeSearch = (document.getElementById("nodeSearchInput").value || "").trim();
+          const params = "?status=" + statusFilter + "&page=" + nodeCurrentPage + "&per_page=" + nodePerPage + "&sort_dir=" + sortDir + (nodeSearch ? "&search=" + encodeURIComponent(nodeSearch) : "");
+          const data = await get("/api/nodes" + params);
+          const arrow = document.getElementById("nodeSortArrow");
+          if (arrow) arrow.textContent = nodeSortDesc ? "▼" : "▲";
           nodesList = data.nodes || [];
           const tbody = document.getElementById("nodes");
           const selectAll = document.getElementById("selectAllNodes");
@@ -631,22 +724,17 @@
                 const m = n.meta || {};
                 const status = m.status || "inactive";
                 const statusLabel = status === "active" ? "Running" : "Stopped";
-                const earnapp = (m.earnapp_link || "").trim();
                 return `<tr>
             <td><input type="checkbox" class="node-cb" value="${escapeHtml(n.id)}" data-id="${escapeHtml(n.id)}"></td>
             <td class="id"><a href="#" onclick="openNodeModal('${n.id}');return false">${escapeHtml(n.id)}</a></td>
             <td class="proxy">${escapeHtml(n.proxy)}</td>
             <td><span class="status ${status}">${statusLabel}</span></td>
-            <td class="cell-actions">
-              <button onclick="run(['--start-node','${n.id}'])">Start</button>
-              <button onclick="run(['--stop-node','${n.id}'])">Stop</button>
-              <button class="danger" onclick="run(['--delete-node','${n.id}'])">Delete</button>
-              <button onclick="restartNode('${n.id}')">Restart</button>
-            </td>
+            <td class="date">${formatDate(m.created_at)}</td>
           </tr>`;
               })
               .join("") ||
             '<tr><td colspan="5">No nodes. Add proxies in the Manage proxies tab to create nodes.</td></tr>';
+          renderPagination("nodesPagination", {page: data.page, pages: data.pages, total: data.total}, function (p) { nodeCurrentPage = p; loadNodes(); });
         } catch (e) {
           out("Load nodes: " + e.message, true);
         } finally {
@@ -672,6 +760,7 @@
         document.getElementById("modalBody").innerHTML = `
         <p><span class="label">Proxy:</span> ${escapeHtml(m.proxy || n.proxy || "")}</p>
         <p><span class="label">Status:</span> <span class="status ${m.status || "inactive"}">${(m.status || "inactive") === "active" ? "Running" : "Stopped"}</span></p>
+        <p><span class="label">Created:</span> ${formatDate(m.created_at)}</p>
         <p><span class="label">EarnApp:</span></p>${earnappHtml}
         <p class="label">Containers:</p>
         <div class="modal-containers">${containersHtml}</div>
@@ -762,25 +851,33 @@
       async function loadProxies() {
         setLoading(true);
         try {
-          const data = await get("/api/proxies");
+          const sortDir = proxySortDesc ? "desc" : "asc";
+          const proxySearch = (document.getElementById("proxySearchInput").value || "").trim();
+          const params = "?page=" + proxyCurrentPage + "&per_page=" + proxyPerPage + "&sort_dir=" + sortDir + (proxySearch ? "&search=" + encodeURIComponent(proxySearch) : "");
+          const data = await get("/api/proxies" + params);
+          const arrow = document.getElementById("proxySortArrow");
+          if (arrow) arrow.textContent = proxySortDesc ? "▼" : "▲";
           const tbody = document.getElementById("proxies");
           const selectAll = document.getElementById("selectAllProxies");
           if (selectAll) selectAll.checked = false;
           tbody.innerHTML =
             (data.proxies || [])
               .map(
-                (p) => {
+                (item) => {
+                  const p = typeof item === "string" ? item : item.proxy;
+                  const createdAt = (typeof item === "object" && item.created_at) ? item.created_at : "";
                   const enc = btoa(unescape(encodeURIComponent(p)));
                   return `
           <tr>
             <td><input type="checkbox" class="proxy-cb" data-proxy="${escapeHtml(enc)}"></td>
             <td class="proxy">${escapeHtml(p)}</td>
-            <td class="cell-actions"><button class="danger" data-proxy="${escapeHtml(enc)}" onclick="removeProxy(this)">Delete</button></td>
+            <td class="date">${formatDate(createdAt)}</td>
           </tr>
         `;
                 },
               )
               .join("") || '<tr><td colspan="3">No proxies.</td></tr>';
+          renderPagination("proxiesPagination", {page: data.page, pages: data.pages, total: data.total}, function (p) { proxyCurrentPage = p; loadProxies(); });
         } catch (e) {
           out("Load proxies: " + e.message, true);
         } finally {
@@ -791,6 +888,19 @@
         const d = document.createElement("div");
         d.textContent = s;
         return d.innerHTML;
+      }
+      function formatDate(iso) {
+        if (!iso) return "—";
+        try {
+          const d = new Date(iso);
+          if (isNaN(d)) return "—";
+          const hh = String(d.getHours()).padStart(2, "0");
+          const mm = String(d.getMinutes()).padStart(2, "0");
+          const ss = String(d.getSeconds()).padStart(2, "0");
+          const dd = String(d.getDate()).padStart(2, "0");
+          const mo = String(d.getMonth() + 1).padStart(2, "0");
+          return hh + ":" + mm + ":" + ss + " " + dd + "/" + mo + "/" + d.getFullYear();
+        } catch (_) { return "—"; }
       }
       function parseAndValidateProxyList(text) {
         const lines = (text || "")
@@ -875,23 +985,6 @@
         setLoading(true);
         try {
           const res = await post("/api/proxy/remove", { proxies: list });
-          out(res.output, !res.ok);
-          if (res.ok) {
-            await loadNodes();
-            await loadProxies();
-          }
-        } catch (e) {
-          out("Error: " + e.message, true);
-        } finally {
-          setLoading(false);
-        }
-      }
-      async function removeProxy(btn) {
-        const proxy = decodeURIComponent(escape(atob(btn.dataset.proxy || "")));
-        if (!proxy || !confirm("Delete this proxy and its node?")) return;
-        setLoading(true);
-        try {
-          const res = await post("/api/proxy/remove", { proxies: [proxy] });
           out(res.output, !res.ok);
           if (res.ok) {
             await loadNodes();
