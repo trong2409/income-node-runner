@@ -335,6 +335,7 @@
     <div class="tabs">
       <div class="tab active" data-tab="proxy" onclick="switchTab('proxy')">Manage proxies</div>
       <div class="tab" data-tab="node" onclick="switchTab('node')">Manage nodes</div>
+      <div class="tab" data-tab="earnapp-search" onclick="switchTab('earnapp-search')">Tìm node (EarnApp ID)</div>
     </div>
 
     <div id="panel-proxy" class="tab-panel active">
@@ -424,6 +425,39 @@
       </section>
     </div>
 
+    <div id="panel-earnapp-search" class="tab-panel">
+      <section>
+        <h2 style="margin: 0 0 8px; font-size: 1rem">Tìm node theo EarnApp Node ID</h2>
+        <p style="margin:0 0 8px;font-size:12px;color:#888">Nhập chuỗi EarnApp node ID (ví dụ: sdk-node-ec36428689fe3baacfffcc3e35bee8b0). Sẽ hiển thị các node có link EarnApp chứa chuỗi này.</p>
+        <div class="bar" style="align-items: center; gap: 8px; flex-wrap: wrap;">
+          <label style="margin: 0; flex: 0 0 auto;">EarnApp Node ID:</label>
+          <input
+            type="text"
+            id="earnappSearchInput"
+            placeholder="sdk-node-ec36428689fe3baacfffcc3e35bee8b0"
+            style="max-width: 360px;"
+          />
+          <button class="primary" onclick="searchEarnAppNodes()">Tìm</button>
+          <button onclick="loadNodes().then(function(){ searchEarnAppNodes(); })">Refresh &amp; tìm lại</button>
+        </div>
+        <div id="earnapp-search-result-wrap" style="margin-top: 12px;">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Proxy</th>
+                <th>Status</th>
+                <th>EarnApp link</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="earnappSearchResult"></tbody>
+          </table>
+          <p id="earnappSearchMsg" style="font-size: 12px; color: #888; margin: 8px 0 0;"></p>
+        </div>
+      </section>
+    </div>
+
     <div id="loadingOverlay" class="loading-overlay" aria-hidden="true">
       <div class="loading-spinner" role="status" aria-label="Loading"></div>
     </div>
@@ -471,6 +505,7 @@
       function switchTab(name) {
         document.querySelectorAll(".tab").forEach((t) => t.classList.toggle("active", t.dataset.tab === name));
         document.querySelectorAll(".tab-panel").forEach((p) => p.classList.toggle("active", p.id === "panel-" + name));
+        if (name === "earnapp-search") searchEarnAppNodes();
       }
       function clearOutput() {
         const el = document.getElementById("out");
@@ -541,6 +576,47 @@
         }
       }
       let nodesList = [];
+      function searchEarnAppNodes() {
+        const term = (document.getElementById("earnappSearchInput").value || "").trim();
+        const tbody = document.getElementById("earnappSearchResult");
+        const msgEl = document.getElementById("earnappSearchMsg");
+        if (!term) {
+          tbody.innerHTML = '<tr><td colspan="5" style="color:#888">Nhập EarnApp Node ID (ví dụ: sdk-node-ec36428689fe3baacfffcc3e35bee8b0) rồi bấm Tìm.</td></tr>';
+          msgEl.textContent = "";
+          return;
+        }
+        const lower = term.toLowerCase();
+        const matched = nodesList.filter((n) => {
+          const earnapp = (n.meta && n.meta.earnapp_link) ? String(n.meta.earnapp_link) : "";
+          return earnapp.toLowerCase().includes(lower);
+        });
+        if (matched.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5" style="color:#888">Không tìm thấy node nào có EarnApp link chứa chuỗi này.</td></tr>';
+          msgEl.textContent = "Không tìm thấy node nào.";
+        } else {
+          tbody.innerHTML = matched
+            .map((n) => {
+              const m = n.meta || {};
+              const status = m.status || "inactive";
+              const statusLabel = status === "active" ? "Running" : "Stopped";
+              const earnapp = (m.earnapp_link || "").trim();
+              return `<tr>
+                <td class="id"><a href="#" onclick="openNodeModal('${n.id}');return false">${escapeHtml(n.id)}</a></td>
+                <td class="proxy">${escapeHtml(n.proxy)}</td>
+                <td><span class="status ${status}">${statusLabel}</span></td>
+                <td class="proxy" style="max-width:200px">${earnapp ? escapeHtml(earnapp) : "—"}</td>
+                <td class="cell-actions">
+                  <button onclick="run(['--start-node','${n.id}'])">Start</button>
+                  <button onclick="run(['--stop-node','${n.id}'])">Stop</button>
+                  <button class="danger" onclick="run(['--delete-node','${n.id}'])">Delete</button>
+                  <button onclick="restartNode('${n.id}')">Restart</button>
+                </td>
+              </tr>`;
+            })
+            .join("");
+          msgEl.textContent = "Tìm thấy " + matched.length + " node.";
+        }
+      }
       async function loadNodes() {
         setLoading(true);
         try {
