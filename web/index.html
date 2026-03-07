@@ -496,16 +496,17 @@
       <section>
         <h2 style="margin: 0 0 8px; font-size: 1rem">Find node by EarnApp Node ID</h2>
         <p style="margin:0 0 8px;font-size:12px;color:#888">Enter EarnApp node ID string (e.g. sdk-node-ec36428689fe3baacfffcc3e35bee8b0). Nodes whose EarnApp link contains this string will be shown.</p>
-        <div class="bar" style="align-items: center; gap: 8px; flex-wrap: wrap;">
+        <div class="bar" style="margin-bottom:8px">
           <label style="margin: 0; flex: 0 0 auto;">EarnApp Node ID:</label>
           <input
             type="text"
             id="earnappSearchInput"
             placeholder="sdk-node-ec36428689fe3baacfffcc3e35bee8b0"
             style="max-width: 360px;"
+            onkeydown="if(event.key==='Enter')searchEarnAppNodes()"
           />
           <button class="primary" onclick="searchEarnAppNodes()">Search</button>
-          <button onclick="loadNodes().then(function(){ searchEarnAppNodes(); })">Refresh &amp; search again</button>
+          <button onclick="loadNodes().then(function(){ searchEarnAppNodes(); })">Refresh</button>
         </div>
         <div id="earnapp-search-result-wrap" style="margin-top: 12px;">
           <table>
@@ -695,13 +696,30 @@
                 <td class="cell-actions">
                   <button onclick="run(['--start-node','${n.id}'])">Start</button>
                   <button onclick="run(['--stop-node','${n.id}'])">Stop</button>
-                  <button class="danger" onclick="run(['--delete-node','${n.id}'])">Delete</button>
                   <button onclick="restartNode('${n.id}')">Restart</button>
+                  <button class="danger" onclick="deleteProxyFromEarnApp('${escapeJs(n.proxy)}')">Delete proxy</button>
                 </td>
               </tr>`;
             })
             .join("");
           msgEl.textContent = "Found " + matched.length + " node(s).";
+        }
+      }
+      async function deleteProxyFromEarnApp(proxy) {
+        if (!proxy || !confirm("Delete this proxy and its node?")) return;
+        setLoading(true);
+        try {
+          const res = await post("/api/proxy/remove", { proxies: [proxy] });
+          out(res.output, !res.ok);
+          if (res.ok) {
+            await loadNodes();
+            await loadProxies();
+            searchEarnAppNodes();
+          }
+        } catch (e) {
+          out("Error: " + e.message, true);
+        } finally {
+          setLoading(false);
         }
       }
       async function loadNodes() {
