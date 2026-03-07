@@ -1,0 +1,834 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Income Node Runner</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        font:
+          14px/1.4 system-ui,
+          sans-serif;
+        margin: 0;
+        padding: 12px;
+        background: #1a1a1e;
+        color: #e2e2e6;
+        max-width: 900px;
+        margin-left: auto;
+        margin-right: auto;
+      }
+      h1 {
+        font-size: 1.25rem;
+        margin: 0 0 12px;
+      }
+      section {
+        margin-bottom: 16px;
+      }
+      .bar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+        margin-bottom: 8px;
+      }
+      button,
+      .btn {
+        background: #2d2d33;
+        color: #c8c8ce;
+        border: 1px solid #444;
+        border-radius: 6px;
+        padding: 6px 12px;
+        cursor: pointer;
+        font-size: 13px;
+      }
+      button:hover,
+      .btn:hover {
+        background: #38383f;
+      }
+      button.danger {
+        border-color: #6a2a2a;
+        color: #e88;
+      }
+      button.primary {
+        border-color: #2a4a6a;
+        color: #8cf;
+      }
+      input[type="text"],
+      textarea {
+        background: #25252a;
+        border: 1px solid #444;
+        color: #e2e2e6;
+        padding: 6px 10px;
+        border-radius: 6px;
+        font-size: 13px;
+        width: 100%;
+      }
+      textarea {
+        min-height: 80px;
+        resize: vertical;
+      }
+      .out-wrap {
+        background: #1e1e22;
+        border: 1px solid #444;
+        border-radius: 6px;
+        margin-top: 8px;
+        overflow: hidden;
+      }
+      .out {
+        background: #1e1e22;
+        border: none;
+        border-radius: 0;
+        padding: 12px 14px;
+        font-family: ui-monospace, "Cascadia Code", "SF Mono", Monaco, Consolas, monospace;
+        font-size: 13px;
+        line-height: 1.5;
+        white-space: pre-wrap;
+        word-break: break-word;
+        max-height: 320px;
+        overflow-y: auto;
+        margin: 0;
+        color: #d4d4d4;
+      }
+      .out.err {
+        border-color: #6a2a2a;
+        color: #e88;
+      }
+      .out .ansi-bold { font-weight: 700; }
+      .out .ansi-dim { opacity: 0.7; }
+      .out .ansi-red { color: #f48771; }
+      .out .ansi-green { color: #89d185; }
+      .out .ansi-yellow { color: #dcdcaa; }
+      .out .ansi-blue { color: #6fb3d2; }
+      .out .ansi-magenta { color: #c678dd; }
+      .out .ansi-cyan { color: #56b6c2; }
+      .out .ansi-white { color: #e2e2e6; }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+      }
+      th,
+      td {
+        text-align: left;
+        padding: 6px 8px;
+        border-bottom: 1px solid #333;
+      }
+      th {
+        color: #888;
+        font-weight: 600;
+      }
+      td.id {
+        font-family: monospace;
+        color: #8cf;
+      }
+      td.proxy {
+        word-break: break-all;
+        max-width: 280px;
+      }
+      .cell-actions {
+        white-space: nowrap;
+      }
+      .cell-actions button {
+        padding: 4px 8px;
+        font-size: 12px;
+        margin-right: 4px;
+      }
+      .status {
+        font-size: 11px;
+        padding: 2px 6px;
+        border-radius: 4px;
+      }
+      .status.active {
+        background: #1a3a1a;
+        color: #8a8;
+      }
+      .status.inactive {
+        background: #3a2a1a;
+        color: #ca8;
+      }
+      td.id a {
+        color: #8cf;
+        text-decoration: none;
+        cursor: pointer;
+      }
+      td.id a:hover {
+        text-decoration: underline;
+      }
+      .modal-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.7);
+        z-index: 100;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+      }
+      .modal-overlay.show {
+        display: flex;
+      }
+      .modal-box {
+        background: #25252a;
+        border: 1px solid #444;
+        border-radius: 8px;
+        max-width: 480px;
+        width: 100%;
+        max-height: 90vh;
+        overflow: auto;
+        padding: 16px;
+      }
+      .modal-box h3 {
+        margin: 0 0 12px;
+        font-size: 1rem;
+      }
+      .modal-meta {
+        font-size: 12px;
+        margin-bottom: 12px;
+      }
+      .modal-meta p {
+        margin: 4px 0;
+        word-break: break-all;
+      }
+      .modal-meta .label {
+        color: #888;
+      }
+      .modal-meta .value-card {
+        display: block;
+        background: #1e1e22;
+        border: 1px solid #444;
+        border-radius: 6px;
+        padding: 8px 10px;
+        margin-top: 4px;
+        word-break: break-all;
+        font-size: 12px;
+        color: #d4d4d4;
+      }
+      .modal-containers {
+        margin-top: 12px;
+      }
+      .modal-containers span {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        margin: 4px 8px 4px 0;
+        font-size: 12px;
+      }
+      .modal-containers button {
+        padding: 2px 8px;
+        font-size: 11px;
+      }
+      .modal-close {
+        margin-top: 12px;
+      }
+      label {
+        display: block;
+        margin-bottom: 4px;
+        color: #888;
+        font-size: 12px;
+      }
+      .validate-msg {
+        font-size: 12px;
+        margin-left: 8px;
+      }
+      .validate-msg.err {
+        color: #e88;
+      }
+      .validate-msg.ok {
+        color: #8a8;
+      }
+      .grid2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+      }
+      .top-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+        align-items: start;
+        margin-bottom: 16px;
+      }
+      .top-row .out {
+        min-height: 120px;
+      }
+      @media (max-width: 700px) {
+        .grid2,
+        .top-row {
+          grid-template-columns: 1fr;
+        }
+      }
+      .tabs {
+        display: flex;
+        gap: 0;
+        border-bottom: 1px solid #444;
+        margin-bottom: 12px;
+      }
+      .tabs .tab {
+        padding: 8px 16px;
+        cursor: pointer;
+        background: #25252a;
+        border: 1px solid #444;
+        border-bottom: none;
+        border-radius: 6px 6px 0 0;
+        margin-bottom: -1px;
+        color: #888;
+      }
+      .tabs .tab:hover {
+        color: #c8c8ce;
+      }
+      .tabs .tab.active {
+        background: #1a1a1e;
+        color: #8cf;
+        border-bottom: 1px solid #1a1a1e;
+      }
+      .tab-panel {
+        display: none;
+      }
+      .tab-panel.active {
+        display: block;
+      }
+      .footer-out {
+        margin-top: 20px;
+        padding-top: 12px;
+        border-top: 1px solid #333;
+      }
+      .footer-out .out {
+        margin-top: 4px;
+      }
+      .footer-out .bar {
+        margin-bottom: 4px;
+      }
+      .loading-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 999;
+        align-items: center;
+        justify-content: center;
+      }
+      .loading-overlay.show {
+        display: flex;
+      }
+      .loading-spinner {
+        width: 40px;
+        height: 40px;
+        border: 3px solid #444;
+        border-top-color: #8cf;
+        border-radius: 50%;
+        animation: loading-spin 0.8s linear infinite;
+      }
+      @keyframes loading-spin {
+        to { transform: rotate(360deg); }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="bar" style="justify-content:space-between;margin-bottom:8px">
+      <h1 style="margin:0">Income Node Runner</h1>
+      <button type="button" onclick="logout()">Logout</button>
+    </div>
+
+    <div class="tabs">
+      <div class="tab active" data-tab="proxy" onclick="switchTab('proxy')">Manage proxies</div>
+      <div class="tab" data-tab="node" onclick="switchTab('node')">Manage nodes</div>
+    </div>
+
+    <div id="panel-proxy" class="tab-panel active">
+      <section>
+        <h2 style="margin: 0 0 8px; font-size: 1rem">Add proxies</h2>
+        <p style="margin:0 0 6px;font-size:12px;color:#888">Adding a proxy automatically creates its node; you do not need to run «Setup nodes».</p>
+        <label
+          >Proxy list (one per line; lines starting with # or empty are skipped)</label
+        >
+        <textarea
+          id="proxyList"
+          placeholder="protocol://user:pass@host:port&#10;protocol://user:pass@host:port"
+        ></textarea>
+        <div class="bar" style="margin-top: 8px">
+          <button class="primary" onclick="addProxyList()">Add</button>
+          <span id="proxyValidate" class="validate-msg"></span>
+        </div>
+        <div id="proxies-wrap" style="margin-top: 12px">
+          <div class="bar" style="margin-bottom: 8px">
+            <span style="color: #888">Select multiple:</span>
+            <button class="danger" onclick="deleteSelectedProxies()">Delete</button>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>
+                  <input type="checkbox" id="selectAllProxies" onclick="toggleSelectAllProxies(this)" title="Select all" />
+                </th>
+                <th>Proxy</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="proxies"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <div id="panel-node" class="tab-panel">
+      <section>
+        <div class="bar">
+          <button class="primary" onclick="run(['--setup-node'])">
+            Setup nodes
+          </button>
+          <button onclick="run(['--start-all'])">Start all</button>
+          <button onclick="run(['--stop-all'])">Stop all</button>
+          <button class="danger" onclick="run(['--delete-all'])">
+            Delete all
+          </button>
+          <button onclick="run(['--update-properties'])">
+            Update properties
+          </button>
+          <button onclick="run(['--collect-earnapp'])">Collect EarnApp</button>
+        </div>
+      </section>
+      <section>
+        <h2 style="margin: 0 0 8px; font-size: 1rem">Nodes</h2>
+        <div class="bar">
+          <button onclick="loadNodes()">Refresh</button>
+          <span style="margin-left: 8px; color: #888">Select multiple:</span>
+          <button onclick="runSelected('start')">Start</button>
+          <button onclick="runSelected('stop')">Stop</button>
+          <button class="danger" onclick="runSelected('delete')">Delete</button>
+          <button onclick="runSelected('restart')">Restart</button>
+        </div>
+        <div id="nodes-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>
+                  <input
+                    type="checkbox"
+                    id="selectAllNodes"
+                    onclick="toggleSelectAll(this)"
+                    title="Select all"
+                  />
+                </th>
+                <th>ID</th>
+                <th>Proxy</th>
+                <th>Status</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="nodes"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <div id="loadingOverlay" class="loading-overlay" aria-hidden="true">
+      <div class="loading-spinner" role="status" aria-label="Loading"></div>
+    </div>
+
+    <footer class="footer-out">
+      <div class="bar">
+        <label style="margin: 0">Output</label>
+        <button onclick="clearOutput()">Clear</button>
+      </div>
+      <div class="out-wrap">
+        <pre id="out" class="out"></pre>
+      </div>
+    </footer>
+
+    <div
+      id="nodeModal"
+      class="modal-overlay"
+      onclick="if (event.target === this) closeNodeModal();"
+    >
+      <div class="modal-box" onclick="event.stopPropagation()">
+        <h3 id="modalTitle">Node</h3>
+        <div id="modalBody" class="modal-meta"></div>
+        <div class="modal-close">
+          <button onclick="closeNodeModal()">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const API = "";
+      let loadingCount = 0;
+      function setLoading(show) {
+        if (show) {
+          loadingCount++;
+          document.getElementById("loadingOverlay").classList.add("show");
+        } else {
+          loadingCount = Math.max(0, loadingCount - 1);
+          if (loadingCount === 0) document.getElementById("loadingOverlay").classList.remove("show");
+        }
+      }
+      async function logout() {
+        await fetch("/api/logout", { method: "POST", credentials: "same-origin" });
+        window.location.href = "/";
+      }
+      function switchTab(name) {
+        document.querySelectorAll(".tab").forEach((t) => t.classList.toggle("active", t.dataset.tab === name));
+        document.querySelectorAll(".tab-panel").forEach((p) => p.classList.toggle("active", p.id === "panel-" + name));
+      }
+      function clearOutput() {
+        const el = document.getElementById("out");
+        el.textContent = "";
+        el.classList.remove("err");
+      }
+      function ansiToHtml(text) {
+        if (text == null || text === "") return "";
+        const s = String(text);
+        const ansiRe = /\x1b\[([0-9;]*)m/g;
+        const fg = { 31: "ansi-red", 32: "ansi-green", 33: "ansi-yellow", 34: "ansi-blue", 35: "ansi-magenta", 36: "ansi-cyan", 37: "ansi-white" };
+        let html = "";
+        let stack = [];
+        let lastIndex = 0;
+        let m;
+        while ((m = ansiRe.exec(s)) !== null) {
+          html += escapeHtml(s.slice(lastIndex, m.index));
+          if (stack.length) html += "</span>";
+          const codes = m[1].split(";").filter(Boolean).map(Number);
+          stack = [];
+          for (const c of codes) {
+            if (c === 0) { stack = []; break; }
+            if (c === 1) stack.push("ansi-bold");
+            else if (c === 2) stack.push("ansi-dim");
+            else if (fg[c]) stack.push(fg[c]);
+          }
+          if (stack.length) html += '<span class="' + stack.join(" ") + '">';
+          lastIndex = m.index + m[0].length;
+        }
+        html += escapeHtml(s.slice(lastIndex));
+        if (stack.length) html += "</span>";
+        return html;
+      }
+      function out(msg, isErr) {
+        const el = document.getElementById("out");
+        const str = msg == null ? "" : String(msg);
+        el.innerHTML = ansiToHtml(str);
+        el.classList.toggle("err", !!isErr);
+      }
+      async function get(path) {
+        const r = await fetch(API + path, { credentials: "same-origin" });
+        if (r.status === 401) { window.location.href = "/"; return {}; }
+        return r.json();
+      }
+      async function post(path, body) {
+        const r = await fetch(API + path, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: typeof body === "string" ? body : JSON.stringify(body || {}),
+          credentials: "same-origin",
+        });
+        if (r.status === 401) { window.location.href = "/"; return {}; }
+        return r.json();
+      }
+      async function run(args) {
+        out("Running: " + args.join(" ") + " ...");
+        setLoading(true);
+        try {
+          const res = await post("/api/exec", { args });
+          out(res.output || (res.ok ? "Done." : "Error."), !res.ok);
+          const nodeActions = ["--setup-node", "--start-all", "--stop-all", "--delete-all", "--start-node", "--stop-node", "--delete-node"];
+          if (res.ok && nodeActions.some((a) => args.includes(a))) await loadNodes();
+          if (res.ok && args.includes("--setup-node")) await loadProxies();
+        } catch (e) {
+          out("Error: " + e.message, true);
+        } finally {
+          setLoading(false);
+        }
+      }
+      let nodesList = [];
+      async function loadNodes() {
+        setLoading(true);
+        try {
+          const data = await get("/api/nodes");
+          nodesList = data.nodes || [];
+          const tbody = document.getElementById("nodes");
+          const selectAll = document.getElementById("selectAllNodes");
+          if (selectAll) selectAll.checked = false;
+          tbody.innerHTML =
+            nodesList
+              .map((n) => {
+                const m = n.meta || {};
+                const status = m.status || "inactive";
+                const statusLabel = status === "active" ? "Running" : "Stopped";
+                const earnapp = (m.earnapp_link || "").trim();
+                return `<tr>
+            <td><input type="checkbox" class="node-cb" value="${escapeHtml(n.id)}" data-id="${escapeHtml(n.id)}"></td>
+            <td class="id"><a href="#" onclick="openNodeModal('${n.id}');return false">${escapeHtml(n.id)}</a></td>
+            <td class="proxy">${escapeHtml(n.proxy)}</td>
+            <td><span class="status ${status}">${statusLabel}</span></td>
+            <td class="cell-actions">
+              <button onclick="run(['--start-node','${n.id}'])">Start</button>
+              <button onclick="run(['--stop-node','${n.id}'])">Stop</button>
+              <button class="danger" onclick="run(['--delete-node','${n.id}'])">Delete</button>
+              <button onclick="restartNode('${n.id}')">Restart</button>
+            </td>
+          </tr>`;
+              })
+              .join("") ||
+            '<tr><td colspan="5">No nodes. Add proxies in the Manage proxies tab to create nodes.</td></tr>';
+        } catch (e) {
+          out("Load nodes: " + e.message, true);
+        } finally {
+          setLoading(false);
+        }
+      }
+      function openNodeModal(nodeId) {
+        const n = nodesList.find((x) => x.id === nodeId);
+        if (!n) return;
+        const m = n.meta || {};
+        document.getElementById("modalTitle").textContent = "node-" + nodeId;
+        const earnapp = (m.earnapp_link || "").trim();
+        const earnappHtml = `<span class="value-card">${earnapp ? escapeHtml(earnapp) : "—"}</span>`;
+        const containers = m.containers || [];
+        const containersHtml = containers.length
+          ? containers
+              .map(
+                (c) =>
+                  `<span><code>${escapeHtml(c)}</code> <button onclick="showLogs('${nodeId}','${escapeJs(c)}')">Logs</button> <button onclick="restartContainer('${nodeId}','${escapeJs(c)}')">Restart</button></span>`,
+              )
+              .join("")
+          : '<p class="label">—</p>';
+        document.getElementById("modalBody").innerHTML = `
+        <p><span class="label">Proxy:</span> ${escapeHtml(m.proxy || n.proxy || "")}</p>
+        <p><span class="label">Status:</span> <span class="status ${m.status || "inactive"}">${(m.status || "inactive") === "active" ? "Running" : "Stopped"}</span></p>
+        <p><span class="label">EarnApp:</span></p>${earnappHtml}
+        <p class="label">Containers:</p>
+        <div class="modal-containers">${containersHtml}</div>
+      `;
+        document.getElementById("nodeModal").classList.add("show");
+      }
+      function closeNodeModal() {
+        document.getElementById("nodeModal").classList.remove("show");
+      }
+      async function restartNode(nodeId) {
+        out("Restarting node-" + nodeId + " (stop then start)...");
+        await run(["--stop-node", nodeId]);
+        await run(["--start-node", nodeId]);
+        await loadNodes();
+      }
+      function getSelectedNodeIds() {
+        return Array.from(document.querySelectorAll(".node-cb:checked"))
+          .map((cb) => cb.dataset.id || cb.value)
+          .filter(Boolean);
+      }
+      function toggleSelectAll(headerCb) {
+        document.querySelectorAll(".node-cb").forEach((cb) => {
+          cb.checked = !!headerCb.checked;
+        });
+      }
+      async function runSelected(action) {
+        const ids = getSelectedNodeIds();
+        if (!ids.length) {
+          out("Select at least one node (check the box in the first column).", true);
+          return;
+        }
+        if (action === "delete" && !confirm("Delete " + ids.length + " selected node(s)?")) return;
+        setLoading(true);
+        try {
+          if (action === "start") {
+            await run(["--start-node"].concat(ids));
+          } else if (action === "stop") {
+            await run(["--stop-node"].concat(ids));
+          } else if (action === "delete") {
+            await run(["--delete-node"].concat(ids));
+          } else if (action === "restart") {
+            out("Restarting " + ids.length + " node(s)...");
+            await run(["--stop-node"].concat(ids));
+            await run(["--start-node"].concat(ids));
+          }
+          await loadNodes();
+        } finally {
+          setLoading(false);
+        }
+      }
+      function escapeJs(s) {
+        return String(s).replace(/\\/g, "\\\\").replace(/'/g, "\\'");
+      }
+      async function showLogs(nodeId, container) {
+        setLoading(true);
+        try {
+          const r = await fetch(
+            API +
+              "/api/node/" +
+              nodeId +
+              "/logs?container=" +
+              encodeURIComponent(container) +
+              "&tail=200",
+          );
+          const text = await r.text();
+          out(text || "(empty)", false);
+        } catch (e) {
+          out("Logs error: " + e.message, true);
+        } finally {
+          setLoading(false);
+        }
+      }
+      async function restartContainer(nodeId, container) {
+        out("Restarting " + container + " ...");
+        setLoading(true);
+        try {
+          const res = await post("/api/node/" + nodeId + "/restart-container", {
+            container: container,
+          });
+          out(res.output || (res.ok ? "Done." : "Error."), !res.ok);
+          if (res.ok) await loadNodes();
+        } catch (e) {
+          out("Error: " + e.message, true);
+        } finally {
+          setLoading(false);
+        }
+      }
+      async function loadProxies() {
+        setLoading(true);
+        try {
+          const data = await get("/api/proxies");
+          const tbody = document.getElementById("proxies");
+          const selectAll = document.getElementById("selectAllProxies");
+          if (selectAll) selectAll.checked = false;
+          tbody.innerHTML =
+            (data.proxies || [])
+              .map(
+                (p) => {
+                  const enc = btoa(unescape(encodeURIComponent(p)));
+                  return `
+          <tr>
+            <td><input type="checkbox" class="proxy-cb" data-proxy="${escapeHtml(enc)}"></td>
+            <td class="proxy">${escapeHtml(p)}</td>
+            <td class="cell-actions"><button class="danger" data-proxy="${escapeHtml(enc)}" onclick="removeProxy(this)">Delete</button></td>
+          </tr>
+        `;
+                },
+              )
+              .join("") || '<tr><td colspan="3">No proxies.</td></tr>';
+        } catch (e) {
+          out("Load proxies: " + e.message, true);
+        } finally {
+          setLoading(false);
+        }
+      }
+      function escapeHtml(s) {
+        const d = document.createElement("div");
+        d.textContent = s;
+        return d.innerHTML;
+      }
+      function parseAndValidateProxyList(text) {
+        const lines = (text || "")
+          .split(/\r?\n/)
+          .map((s) => s.trim())
+          .filter((s) => s && !s.startsWith("#"));
+        const valid = [];
+        const invalid = [];
+        const re = /^[a-zA-Z0-9+.-]+:\/\//;
+        for (const line of lines) {
+          if (re.test(line)) valid.push(line);
+          else invalid.push(line);
+        }
+        return { valid, invalid };
+      }
+      function setValidateMsg(msg, isErr) {
+        const el = document.getElementById("proxyValidate");
+        el.textContent = msg;
+        el.className = "validate-msg" + (isErr ? " err" : " ok");
+      }
+      async function addProxyList() {
+        const ta = document.getElementById("proxyList");
+        const { valid, invalid } = parseAndValidateProxyList(ta.value);
+        setValidateMsg("", false);
+        if (valid.length === 0) {
+          if (invalid.length)
+            setValidateMsg(
+              "No valid lines (need protocol://...). Invalid: " +
+                invalid.slice(0, 3).join(", "),
+              true,
+            );
+          else
+            setValidateMsg(
+              "Enter at least one proxy (one per line).",
+              true,
+            );
+          return;
+        }
+        if (invalid.length)
+          setValidateMsg(
+            "Skipped " + invalid.length + " invalid line(s).",
+            true,
+          );
+        setLoading(true);
+        try {
+          const res = await post("/api/proxy/add", { proxies: valid });
+          out(res.output, !res.ok);
+          if (res.ok) {
+            ta.value = "";
+            setValidateMsg("Added " + valid.length + " proxy(ies).", false);
+            await loadNodes();
+            await loadProxies();
+          } else setValidateMsg(res.output || "Error", true);
+        } catch (e) {
+          out("Error: " + e.message, true);
+          setValidateMsg("Error: " + e.message, true);
+        } finally {
+          setLoading(false);
+        }
+      }
+      function getSelectedProxies() {
+        return Array.from(document.querySelectorAll(".proxy-cb:checked"))
+          .map((cb) => {
+            try {
+              return decodeURIComponent(escape(atob(cb.dataset.proxy || "")));
+            } catch (_) {
+              return null;
+            }
+          })
+          .filter(Boolean);
+      }
+      function toggleSelectAllProxies(headerCb) {
+        document.querySelectorAll(".proxy-cb").forEach((cb) => (cb.checked = !!headerCb.checked));
+      }
+      async function deleteSelectedProxies() {
+        const list = getSelectedProxies();
+        if (!list.length) {
+          out("Select at least one proxy (check the box in the first column).", true);
+          return;
+        }
+        if (!confirm("Delete " + list.length + " proxy(ies) and their nodes?")) return;
+        setLoading(true);
+        try {
+          const res = await post("/api/proxy/remove", { proxies: list });
+          out(res.output, !res.ok);
+          if (res.ok) {
+            await loadNodes();
+            await loadProxies();
+          }
+        } catch (e) {
+          out("Error: " + e.message, true);
+        } finally {
+          setLoading(false);
+        }
+      }
+      async function removeProxy(btn) {
+        const proxy = decodeURIComponent(escape(atob(btn.dataset.proxy || "")));
+        if (!proxy || !confirm("Delete this proxy and its node?")) return;
+        setLoading(true);
+        try {
+          const res = await post("/api/proxy/remove", { proxies: [proxy] });
+          out(res.output, !res.ok);
+          if (res.ok) {
+            await loadNodes();
+            await loadProxies();
+          }
+        } catch (e) {
+          out("Error: " + e.message, true);
+        } finally {
+          setLoading(false);
+        }
+      }
+      loadNodes();
+      loadProxies();
+    </script>
+  </body>
+</html>

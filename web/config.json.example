@@ -1,0 +1,6 @@
+{
+  "username": "admin",
+  "password": "admin",
+  "session_secret": "change-me-to-a-random-string",
+  "port": 8765
+}
