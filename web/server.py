@@ -327,6 +327,15 @@ class Handler(BaseHTTPRequestHandler):
             if search:
                 nodes = [n for n in nodes if search in n.get("proxy", "").lower()]
 
+            earnapp_search = (qs.get("earnapp_search") or [""])[0].strip().lower()
+            if earnapp_search:
+                nodes = [
+                    n
+                    for n in nodes
+                    if earnapp_search
+                    in (n.get("meta") or {}).get("earnapp_link", "").lower()
+                ]
+
             status_filter = (qs.get("status") or ["all"])[0]
             if status_filter in ("active", "inactive"):
                 nodes = [

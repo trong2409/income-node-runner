@@ -147,6 +147,18 @@
         word-break: break-all;
         max-width: 280px;
       }
+      td.proxy .earnapp-cell {
+        font-size: 11px;
+        margin-top: 4px;
+        color: #6a9;
+      }
+      td.proxy .earnapp-cell a {
+        color: #6a9;
+        text-decoration: none;
+      }
+      td.proxy .earnapp-cell a:hover {
+        text-decoration: underline;
+      }
       .cell-actions {
         white-space: nowrap;
       }
@@ -381,13 +393,6 @@
       <div class="tab" data-tab="node" onclick="switchTab('node')">
         Manage nodes
       </div>
-      <div
-        class="tab"
-        data-tab="earnapp-search"
-        onclick="switchTab('earnapp-search')"
-      >
-        Find node (EarnApp ID)
-      </div>
     </div>
 
     <div id="panel-proxy" class="tab-panel active">
@@ -508,6 +513,13 @@
                 }
               "
             />
+            <input
+              type="text"
+              id="earnappSearchInput"
+              placeholder="Search EarnApp ID..."
+              style="width: 200px"
+              onkeydown="if (event.key === 'Enter') { nodeCurrentPage = 1; loadNodes(); }"
+            />
             <button
               onclick="
                 nodeCurrentPage = 1;
@@ -516,6 +528,7 @@
             >
               Search
             </button>
+            <span style="width: 16px"></span>
             <div class="filter-bar">
               <label style="margin: 0; color: #888">Status:</label>
               <select
@@ -575,57 +588,6 @@
       </section>
     </div>
 
-    <div id="panel-earnapp-search" class="tab-panel">
-      <section>
-        <h2 style="margin: 0 0 8px; font-size: 1rem">
-          Find node by EarnApp Node ID
-        </h2>
-        <p style="margin: 0 0 8px; font-size: 12px; color: #888">
-          Enter EarnApp node ID string (e.g.
-          sdk-node-ec36428689fe3baacfffcc3e35bee8b0). Nodes whose EarnApp link
-          contains this string will be shown.
-        </p>
-        <div class="bar" style="margin-bottom: 8px">
-          <label style="margin: 0; flex: 0 0 auto">EarnApp Node ID:</label>
-          <input
-            type="text"
-            id="earnappSearchInput"
-            placeholder="sdk-node-ec36428689fe3baacfffcc3e35bee8b0"
-            style="max-width: 360px"
-            onkeydown="if (event.key === 'Enter') searchEarnAppNodes();"
-          />
-          <button class="primary" onclick="searchEarnAppNodes()">Search</button>
-          <button
-            onclick="
-              loadNodes().then(function () {
-                searchEarnAppNodes();
-              })
-            "
-          >
-            Refresh
-          </button>
-        </div>
-        <div id="earnapp-search-result-wrap" style="margin-top: 12px">
-          <table>
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Proxy</th>
-                <th>Status</th>
-                <th>EarnApp link</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody id="earnappSearchResult"></tbody>
-          </table>
-          <p
-            id="earnappSearchMsg"
-            style="font-size: 12px; color: #888; margin: 8px 0 0"
-          ></p>
-        </div>
-      </section>
-    </div>
-
     <footer class="footer-out">
       <div class="bar">
         <label style="margin: 0">Output</label>
@@ -668,7 +630,6 @@
           .forEach((p) =>
             p.classList.toggle("active", p.id === "panel-" + name),
           );
-        if (name === "earnapp-search") searchEarnAppNodes();
       }
       function clearOutput() {
         const el = document.getElementById("out");
@@ -842,66 +803,6 @@
         };
       }
 
-      function searchEarnAppNodes() {
-        const term = (
-          document.getElementById("earnappSearchInput").value || ""
-        ).trim();
-        const tbody = document.getElementById("earnappSearchResult");
-        const msgEl = document.getElementById("earnappSearchMsg");
-        if (!term) {
-          tbody.innerHTML =
-            '<tr><td colspan="5" style="color:#888">Enter EarnApp Node ID (e.g. sdk-node-ec36428689fe3baacfffcc3e35bee8b0) then click Search.</td></tr>';
-          msgEl.textContent = "";
-          return;
-        }
-        const lower = term.toLowerCase();
-        const matched = nodesList.filter((n) => {
-          const earnapp =
-            n.meta && n.meta.earnapp_link ? String(n.meta.earnapp_link) : "";
-          return earnapp.toLowerCase().includes(lower);
-        });
-        if (matched.length === 0) {
-          tbody.innerHTML =
-            '<tr><td colspan="5" style="color:#888">No nodes found with EarnApp link containing this string.</td></tr>';
-          msgEl.textContent = "No nodes found.";
-        } else {
-          tbody.innerHTML = matched
-            .map((n) => {
-              const m = n.meta || {};
-              const status = m.status || "inactive";
-              const statusLabel = status === "active" ? "Running" : "Stopped";
-              const earnapp = (m.earnapp_link || "").trim();
-              return `<tr>
-                <td class="id"><a href="#" onclick="openNodeModal('${n.id}');return false">${escapeHtml(n.id)}</a></td>
-                <td class="proxy">${escapeHtml(n.proxy)}</td>
-                <td><span class="status ${status}">${statusLabel}</span></td>
-                <td class="proxy" style="max-width:200px">${earnapp ? escapeHtml(earnapp) : "—"}</td>
-                <td class="cell-actions">
-                  <button onclick="run(['--start-node','${n.id}'])">Start</button>
-                  <button onclick="run(['--stop-node','${n.id}'])">Stop</button>
-                  <button onclick="restartNode('${n.id}')">Restart</button>
-                  <button class="danger" onclick="deleteProxyFromEarnApp('${escapeJs(n.proxy)}')">Delete proxy</button>
-                </td>
-              </tr>`;
-            })
-            .join("");
-          msgEl.textContent = "Found " + matched.length + " node(s).";
-        }
-      }
-      async function deleteProxyFromEarnApp(proxy) {
-        if (!proxy || !confirm("Delete this proxy and its node?")) return;
-        try {
-          const ok = await runStream(["--remove-proxy", proxy]);
-          if (ok) {
-            await loadNodes();
-            await loadProxies();
-            searchEarnAppNodes();
-          }
-        } catch (e) {
-          out("Error: " + e.message, true);
-        } finally {
-        }
-      }
       async function loadNodes() {
         try {
           const statusFilter =
@@ -909,6 +810,9 @@
           const sortDir = nodeSortDesc ? "desc" : "asc";
           const nodeSearch = (
             document.getElementById("nodeSearchInput").value || ""
+          ).trim();
+          const earnappSearch = (
+            document.getElementById("earnappSearchInput").value || ""
           ).trim();
           const params =
             "?status=" +
@@ -919,7 +823,8 @@
             nodePerPage +
             "&sort_dir=" +
             sortDir +
-            (nodeSearch ? "&search=" + encodeURIComponent(nodeSearch) : "");
+            (nodeSearch ? "&search=" + encodeURIComponent(nodeSearch) : "") +
+            (earnappSearch ? "&earnapp_search=" + encodeURIComponent(earnappSearch) : "");
           const data = await get("/api/nodes" + params);
           const arrow = document.getElementById("nodeSortArrow");
           if (arrow) arrow.textContent = nodeSortDesc ? "▼" : "▲";
@@ -933,10 +838,17 @@
                 const m = n.meta || {};
                 const status = m.status || "inactive";
                 const statusLabel = status === "active" ? "Running" : "Stopped";
+                const earnappRaw = (m.earnapp_link || "").trim();
+                const earnappUrl = earnappRaw.includes("https://")
+                  ? earnappRaw.substring(earnappRaw.indexOf("https://"))
+                  : "";
+                const earnappHtml = earnappUrl
+                  ? `<div class="earnapp-cell"><a href="${escapeHtml(earnappUrl)}" target="_blank" rel="noopener">${escapeHtml(earnappUrl)}</a></div>`
+                  : "";
                 return `<tr>
             <td><input type="checkbox" class="node-cb" value="${escapeHtml(n.id)}" data-id="${escapeHtml(n.id)}"></td>
             <td class="id"><a href="#" onclick="openNodeModal('${n.id}');return false">${escapeHtml(n.id)}</a></td>
-            <td class="proxy">${escapeHtml(n.proxy)}</td>
+            <td class="proxy"><div>${escapeHtml(n.proxy)}</div>${earnappHtml}</td>
             <td><span class="status ${status}">${statusLabel}</span></td>
             <td class="date">${formatDate(m.created_at)}</td>
           </tr>`;

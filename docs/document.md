@@ -204,7 +204,9 @@ Copy root `properties.conf` over `properties.conf` in all nodes in `runtime/`.
 ./main.sh --collect-earnapp
 ```
 
-Collect earnapp links from all nodes into `earnapp-links.txt` in format `node-<id> : <earnapp.txt content>`.
+Collect earnapp links from all nodes:
+- **earnapp-links.json**: JSON array with `node_id`, `proxy`, `earnapp_link` per node
+- **earnapp-links.txt**: Plain text `node-<id> : <earnapp> | proxy: <proxy>`
 
 ---
 
@@ -238,7 +240,7 @@ python3 web/server.py
 Open in browser: **http://127.0.0.1:8765**
 
 - **Requirements**: Python 3 (no extra packages).
-- **Features**: View nodes & proxies; Setup / Start all / Stop all / Delete all; Start/Stop/Delete per node; Add/Remove proxy; Filter nodes by status; Pagination for both lists. Two delete actions in Nodes tab: **Delete node** (node only, proxy stays in list); **Delete proxy** (removes proxy from list and deletes the node). Output is streamed in real time via Server-Sent Events (no loading overlay).
+- **Features**: View nodes & proxies; Setup / Start all / Stop all / Delete all; Start/Stop/Delete per node; Add/Remove proxy; Filter nodes by proxy, EarnApp ID, or status; Pagination for both lists. Two delete actions in Nodes tab: **Delete node** (node only, proxy stays in list); **Delete proxy** (removes proxy from list and deletes the node). Output is streamed in real time via Server-Sent Events (no loading overlay).
 - **Port**: Default 8765; override with `PORT=3000 ./start.sh` or `PORT=3000 python3 web/server.py`.
 
 ### API query parameters

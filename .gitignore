@@ -1,5 +1,6 @@
 runtime/
 earnapp-links.txt
+earnapp-links.json
 web/server.log
 web/config.json
 __pycache__/

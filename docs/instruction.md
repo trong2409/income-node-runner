@@ -54,7 +54,7 @@ Node ID = first 8 characters of SHA256(proxy). Node directory = `runtime/node-<i
 | `--stop-node <id> [ids...]`                    | `run_nodes("stop", "--delete", ...)` | Stop node(s) by ID                                                                     |
 | `--stop-all`                                   | `run_all_nodes("stop", "--delete")`  | Stop all nodes                                                                         |
 | `--update-properties`                          | `update_properties()`                | Copy `properties.conf` into all nodes                                                  |
-| `--collect-earnapp`                            | `collect_earnapp()`                  | Collect earnapp links into `earnapp-links.txt`                                         |
+| `--collect-earnapp`                            | `collect_earnapp()`                  | Collect earnapp links into `earnapp-links.json` (node_id, proxy, earnapp_link) and `earnapp-links.txt` |
 | `--container-logs <id> <container> [--tail N]` | `container_logs()`                   | Print container logs (docker logs)                                                     |
 | `--container-restart <id> <container>`         | `container_restart()`                | Restart container (docker restart)                                                     |
 

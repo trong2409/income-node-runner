@@ -262,15 +262,21 @@ update_properties() {
 }
 
 collect_earnapp() {
-  local OUTPUT_FILE="$SCRIPT_DIR/earnapp-links.txt"
-  > "$OUTPUT_FILE"
+  local OUTPUT_JSON="$SCRIPT_DIR/earnapp-links.json"
+  local OUTPUT_TXT="$SCRIPT_DIR/earnapp-links.txt"
+  local TMP_DATA="$SCRIPT_DIR/.earnapp-collect-tmp"
 
+  > "$TMP_DATA"
   local count=0
   for NODE_ID in $(get_node_ids); do
-    local EARNAPP_FILE="$RUNTIME_DIR/node-${NODE_ID}/earnapp.txt"
+    local NODE_DIR="$RUNTIME_DIR/node-${NODE_ID}"
+    local EARNAPP_FILE="$NODE_DIR/earnapp.txt"
     if [ -f "$EARNAPP_FILE" ]; then
-      local CONTENT=$(cat "$EARNAPP_FILE" | tr -d '\n')
-      echo "node-${NODE_ID} : $CONTENT" >> "$OUTPUT_FILE"
+      local CONTENT
+      CONTENT=$(cat "$EARNAPP_FILE" | tr -d '\n\r')
+      local PROXY
+      PROXY=$(grep -v '^#' "$NODE_DIR/proxies.txt" 2>/dev/null | grep -v '^[[:space:]]*$' | head -1)
+      printf '%s\n' "$NODE_ID" "$PROXY" "$CONTENT" >> "$TMP_DATA"
       count=$((count + 1))
     else
       echo "  [SKIP] node-${NODE_ID} — earnapp.txt not found"
@@ -279,11 +285,40 @@ collect_earnapp() {
 
   if [ $count -eq 0 ]; then
     echo "No earnapp.txt found in any node."
-    rm -f "$OUTPUT_FILE"
+    rm -f "$OUTPUT_JSON" "$OUTPUT_TXT" "$TMP_DATA"
   else
-    echo "Done! Collected $count earnapp link(s) into earnapp-links.txt"
+    python3 -c "
+import json
+items = []
+with open('$TMP_DATA') as f:
+    lines = [l.rstrip('\n\r') for l in f.readlines()]
+i = 0
+while i + 2 < len(lines):
+    items.append({
+        'node_id': lines[i],
+        'proxy': lines[i+1],
+        'earnapp_link': lines[i+2]
+    })
+    i += 3
+with open('$OUTPUT_JSON', 'w') as f:
+    json.dump(items, f, ensure_ascii=False, indent=2)
+" 2>/dev/null
+    rm -f "$TMP_DATA"
+    > "$OUTPUT_TXT"
+    for NODE_ID in $(get_node_ids); do
+      local NODE_DIR="$RUNTIME_DIR/node-${NODE_ID}"
+      local EARNAPP_FILE="$NODE_DIR/earnapp.txt"
+      if [ -f "$EARNAPP_FILE" ]; then
+        local CONTENT
+        CONTENT=$(cat "$EARNAPP_FILE" | tr -d '\n\r')
+        local PROXY
+        PROXY=$(grep -v '^#' "$NODE_DIR/proxies.txt" 2>/dev/null | grep -v '^[[:space:]]*$' | head -1)
+        echo "node-${NODE_ID} : $CONTENT | proxy: $PROXY" >> "$OUTPUT_TXT"
+      fi
+    done
+    echo "Done! Collected $count earnapp link(s) into earnapp-links.json and earnapp-links.txt"
     echo ""
-    cat "$OUTPUT_FILE"
+    cat "$OUTPUT_JSON"
   fi
 }
 
