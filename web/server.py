@@ -124,6 +124,28 @@ def run_main(args):
         return False, str(e)
 
 
+def run_main_stream(args):
+    """Run main.sh with args; yield (line, returncode). returncode is None until done."""
+    if not os.path.isfile(MAIN_SH):
+        yield "main.sh not found\n", 1
+        return
+    try:
+        proc = subprocess.Popen(
+            ["bash", MAIN_SH] + args,
+            cwd=ROOT,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            bufsize=1,
+        )
+        for line in iter(proc.stdout.readline, ""):
+            yield line, None
+        proc.wait()
+        yield "", proc.returncode
+    except Exception as e:
+        yield str(e) + "\n", 1
+
+
 def parse_list_nodes(output):
     """Parse 'node-<id>  <proxy>' lines into [{id, proxy}]."""
     nodes = []
@@ -451,9 +473,57 @@ class Handler(BaseHTTPRequestHandler):
                 ok, out = run_main(args)
                 if ok and "--setup-node" in args:
                     ensure_proxy_meta(read_proxies())
+                if ok and "--add-proxy" in args:
+                    ensure_proxy_meta(
+                        [str(p).strip() for p in args[args.index("--add-proxy") + 1 :]]
+                    )
+                if ok and "--remove-proxy" in args:
+                    remove_proxy_meta(
+                        [str(p) for p in args[args.index("--remove-proxy") + 1 :]]
+                    )
                 self.send_json({"ok": ok, "output": out})
             except json.JSONDecodeError:
                 self.send_json({"ok": False, "output": "Invalid JSON"}, 400)
+            return
+
+        if path == "/api/exec-stream":
+            try:
+                data = json.loads(body) if body else {}
+                args = data.get("args") or []
+                if not isinstance(args, list):
+                    args = [str(args)]
+                self.send_response(200)
+                self.send_header("Content-Type", "text/plain; charset=utf-8")
+                self.send_header("Transfer-Encoding", "chunked")
+                self.send_header("Cache-Control", "no-cache")
+                self.end_headers()
+                exit_code = 1
+                for chunk, code in run_main_stream(args):
+                    if code is not None:
+                        exit_code = code
+                        chunk = chunk + "\n[Exit: " + str(code) + "]\n"
+                    if chunk:
+                        data_bytes = chunk.encode("utf-8")
+                        self.wfile.write(
+                            ("%x\r\n" % len(data_bytes)).encode() + data_bytes + b"\r\n"
+                        )
+                        self.wfile.flush()
+                if exit_code == 0 and "--setup-node" in args:
+                    ensure_proxy_meta(read_proxies())
+                if exit_code == 0 and "--add-proxy" in args:
+                    ensure_proxy_meta(
+                        [str(p).strip() for p in args[args.index("--add-proxy") + 1 :]]
+                    )
+                if exit_code == 0 and "--remove-proxy" in args:
+                    remove_proxy_meta(
+                        [str(p) for p in args[args.index("--remove-proxy") + 1 :]]
+                    )
+                self.wfile.write(b"0\r\n\r\n")
+                self.wfile.flush()
+            except json.JSONDecodeError:
+                self.send_json({"ok": False, "output": "Invalid JSON"}, 400)
+            except (BrokenPipeError, ConnectionResetError):
+                pass
             return
 
         if path == "/api/proxy/add":

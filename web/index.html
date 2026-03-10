@@ -82,7 +82,8 @@
         border: none;
         border-radius: 0;
         padding: 12px 14px;
-        font-family: ui-monospace, "Cascadia Code", "SF Mono", Monaco, Consolas, monospace;
+        font-family:
+          ui-monospace, "Cascadia Code", "SF Mono", Monaco, Consolas, monospace;
         font-size: 13px;
         line-height: 1.5;
         white-space: pre-wrap;
@@ -96,15 +97,33 @@
         border-color: #6a2a2a;
         color: #e88;
       }
-      .out .ansi-bold { font-weight: 700; }
-      .out .ansi-dim { opacity: 0.7; }
-      .out .ansi-red { color: #f48771; }
-      .out .ansi-green { color: #89d185; }
-      .out .ansi-yellow { color: #dcdcaa; }
-      .out .ansi-blue { color: #6fb3d2; }
-      .out .ansi-magenta { color: #c678dd; }
-      .out .ansi-cyan { color: #56b6c2; }
-      .out .ansi-white { color: #e2e2e6; }
+      .out .ansi-bold {
+        font-weight: 700;
+      }
+      .out .ansi-dim {
+        opacity: 0.7;
+      }
+      .out .ansi-red {
+        color: #f48771;
+      }
+      .out .ansi-green {
+        color: #89d185;
+      }
+      .out .ansi-yellow {
+        color: #dcdcaa;
+      }
+      .out .ansi-blue {
+        color: #6fb3d2;
+      }
+      .out .ansi-magenta {
+        color: #c678dd;
+      }
+      .out .ansi-cyan {
+        color: #56b6c2;
+      }
+      .out .ansi-white {
+        color: #e2e2e6;
+      }
       table {
         width: 100%;
         border-collapse: collapse;
@@ -301,29 +320,6 @@
       .footer-out .bar {
         margin-bottom: 4px;
       }
-      .loading-overlay {
-        display: none;
-        position: fixed;
-        inset: 0;
-        background: rgba(0, 0, 0, 0.5);
-        z-index: 999;
-        align-items: center;
-        justify-content: center;
-      }
-      .loading-overlay.show {
-        display: flex;
-      }
-      .loading-spinner {
-        width: 40px;
-        height: 40px;
-        border: 3px solid #444;
-        border-top-color: #8cf;
-        border-radius: 50%;
-        animation: loading-spin 0.8s linear infinite;
-      }
-      @keyframes loading-spin {
-        to { transform: rotate(360deg); }
-      }
       .pagination {
         display: flex;
         align-items: center;
@@ -373,23 +369,37 @@
     </style>
   </head>
   <body>
-    <div class="bar" style="justify-content:space-between;margin-bottom:8px">
-      <h1 style="margin:0">Income Node Runner</h1>
+    <div class="bar" style="justify-content: space-between; margin-bottom: 8px">
+      <h1 style="margin: 0">Income Node Runner</h1>
       <button type="button" onclick="logout()">Logout</button>
     </div>
 
     <div class="tabs">
-      <div class="tab active" data-tab="proxy" onclick="switchTab('proxy')">Manage proxies</div>
-      <div class="tab" data-tab="node" onclick="switchTab('node')">Manage nodes</div>
-      <div class="tab" data-tab="earnapp-search" onclick="switchTab('earnapp-search')">Find node (EarnApp ID)</div>
+      <div class="tab active" data-tab="proxy" onclick="switchTab('proxy')">
+        Manage proxies
+      </div>
+      <div class="tab" data-tab="node" onclick="switchTab('node')">
+        Manage nodes
+      </div>
+      <div
+        class="tab"
+        data-tab="earnapp-search"
+        onclick="switchTab('earnapp-search')"
+      >
+        Find node (EarnApp ID)
+      </div>
     </div>
 
     <div id="panel-proxy" class="tab-panel active">
       <section>
         <h2 style="margin: 0 0 8px; font-size: 1rem">Add proxies</h2>
-        <p style="margin:0 0 6px;font-size:12px;color:#888">Adding a proxy automatically creates its node; you do not need to run «Setup nodes».</p>
+        <p style="margin: 0 0 6px; font-size: 12px; color: #888">
+          Adding a proxy automatically creates its node; you do not need to run
+          «Setup nodes».
+        </p>
         <label
-          >Proxy list (one per line; lines starting with # or empty are skipped)</label
+          >Proxy list (one per line; lines starting with # or empty are
+          skipped)</label
         >
         <textarea
           id="proxyList"
@@ -400,24 +410,61 @@
           <span id="proxyValidate" class="validate-msg"></span>
         </div>
         <div id="proxies-wrap" style="margin-top: 12px">
-          <div class="bar" style="margin-bottom: 8px; justify-content: space-between">
-            <div class="bar" style="margin:0">
+          <div
+            class="bar"
+            style="margin-bottom: 8px; justify-content: space-between"
+          >
+            <div class="bar" style="margin: 0">
               <button onclick="loadProxies()">Refresh</button>
-              <input type="text" id="proxySearchInput" placeholder="Search proxy..." style="width:200px" onkeydown="if(event.key==='Enter'){proxyCurrentPage=1;loadProxies()}" />
-              <button onclick="proxyCurrentPage=1;loadProxies()">Search</button>
+              <input
+                type="text"
+                id="proxySearchInput"
+                placeholder="Search proxy..."
+                style="width: 200px"
+                onkeydown="
+                  if (event.key === 'Enter') {
+                    proxyCurrentPage = 1;
+                    loadProxies();
+                  }
+                "
+              />
+              <button
+                onclick="
+                  proxyCurrentPage = 1;
+                  loadProxies();
+                "
+              >
+                Search
+              </button>
             </div>
-            <div class="bar" style="margin:0">
-              <button class="danger" onclick="deleteSelectedProxies()">Delete selected</button>
+            <div class="bar" style="margin: 0">
+              <button class="danger" onclick="deleteSelectedProxies()">
+                Delete selected
+              </button>
             </div>
           </div>
           <table>
             <thead>
               <tr>
                 <th>
-                  <input type="checkbox" id="selectAllProxies" onclick="toggleSelectAllProxies(this)" title="Select all" />
+                  <input
+                    type="checkbox"
+                    id="selectAllProxies"
+                    onclick="toggleSelectAllProxies(this)"
+                    title="Select all"
+                  />
                 </th>
                 <th>Proxy</th>
-                <th class="sortable" onclick="proxySortDesc=!proxySortDesc;proxyCurrentPage=1;loadProxies()">Created <span class="sort-arrow" id="proxySortArrow">▼</span></th>
+                <th
+                  class="sortable"
+                  onclick="
+                    proxySortDesc = !proxySortDesc;
+                    proxyCurrentPage = 1;
+                    loadProxies();
+                  "
+                >
+                  Created <span class="sort-arrow" id="proxySortArrow">▼</span>
+                </th>
               </tr>
             </thead>
             <tbody id="proxies"></tbody>
@@ -447,24 +494,51 @@
       <section>
         <h2 style="margin: 0 0 8px; font-size: 1rem">Nodes</h2>
         <div class="bar" style="justify-content: space-between">
-          <div class="bar" style="margin:0">
+          <div class="bar" style="margin: 0">
             <button onclick="loadNodes()">Refresh</button>
-            <input type="text" id="nodeSearchInput" placeholder="Search proxy..." style="width:200px" onkeydown="if(event.key==='Enter'){nodeCurrentPage=1;loadNodes()}" />
-            <button onclick="nodeCurrentPage=1;loadNodes()">Search</button>
+            <input
+              type="text"
+              id="nodeSearchInput"
+              placeholder="Search proxy..."
+              style="width: 200px"
+              onkeydown="
+                if (event.key === 'Enter') {
+                  nodeCurrentPage = 1;
+                  loadNodes();
+                }
+              "
+            />
+            <button
+              onclick="
+                nodeCurrentPage = 1;
+                loadNodes();
+              "
+            >
+              Search
+            </button>
             <div class="filter-bar">
-              <label style="margin:0;color:#888">Status:</label>
-              <select id="nodeStatusFilter" onchange="nodeCurrentPage=1;loadNodes()">
+              <label style="margin: 0; color: #888">Status:</label>
+              <select
+                id="nodeStatusFilter"
+                onchange="
+                  nodeCurrentPage = 1;
+                  loadNodes();
+                "
+              >
                 <option value="all">All</option>
                 <option value="active">Running</option>
                 <option value="inactive">Stopped</option>
               </select>
             </div>
           </div>
-          <div class="bar" style="margin:0">
+          <div class="bar" style="margin: 0">
             <button onclick="runSelected('start')">Start</button>
             <button onclick="runSelected('stop')">Stop</button>
             <button onclick="runSelected('restart')">Restart</button>
-            <button class="danger" onclick="runSelected('delete')">Delete</button>
+            <button onclick="runSelected('delete')">Delete node</button>
+            <button class="danger" onclick="runSelected('deleteProxy')">
+              Delete proxy
+            </button>
           </div>
         </div>
         <div id="nodes-wrap">
@@ -482,7 +556,16 @@
                 <th>ID</th>
                 <th>Proxy</th>
                 <th>Status</th>
-                <th class="sortable" onclick="nodeSortDesc=!nodeSortDesc;nodeCurrentPage=1;loadNodes()">Created <span class="sort-arrow" id="nodeSortArrow">▼</span></th>
+                <th
+                  class="sortable"
+                  onclick="
+                    nodeSortDesc = !nodeSortDesc;
+                    nodeCurrentPage = 1;
+                    loadNodes();
+                  "
+                >
+                  Created <span class="sort-arrow" id="nodeSortArrow">▼</span>
+                </th>
               </tr>
             </thead>
             <tbody id="nodes"></tbody>
@@ -494,21 +577,35 @@
 
     <div id="panel-earnapp-search" class="tab-panel">
       <section>
-        <h2 style="margin: 0 0 8px; font-size: 1rem">Find node by EarnApp Node ID</h2>
-        <p style="margin:0 0 8px;font-size:12px;color:#888">Enter EarnApp node ID string (e.g. sdk-node-ec36428689fe3baacfffcc3e35bee8b0). Nodes whose EarnApp link contains this string will be shown.</p>
-        <div class="bar" style="margin-bottom:8px">
-          <label style="margin: 0; flex: 0 0 auto;">EarnApp Node ID:</label>
+        <h2 style="margin: 0 0 8px; font-size: 1rem">
+          Find node by EarnApp Node ID
+        </h2>
+        <p style="margin: 0 0 8px; font-size: 12px; color: #888">
+          Enter EarnApp node ID string (e.g.
+          sdk-node-ec36428689fe3baacfffcc3e35bee8b0). Nodes whose EarnApp link
+          contains this string will be shown.
+        </p>
+        <div class="bar" style="margin-bottom: 8px">
+          <label style="margin: 0; flex: 0 0 auto">EarnApp Node ID:</label>
           <input
             type="text"
             id="earnappSearchInput"
             placeholder="sdk-node-ec36428689fe3baacfffcc3e35bee8b0"
-            style="max-width: 360px;"
-            onkeydown="if(event.key==='Enter')searchEarnAppNodes()"
+            style="max-width: 360px"
+            onkeydown="if (event.key === 'Enter') searchEarnAppNodes();"
           />
           <button class="primary" onclick="searchEarnAppNodes()">Search</button>
-          <button onclick="loadNodes().then(function(){ searchEarnAppNodes(); })">Refresh</button>
+          <button
+            onclick="
+              loadNodes().then(function () {
+                searchEarnAppNodes();
+              })
+            "
+          >
+            Refresh
+          </button>
         </div>
-        <div id="earnapp-search-result-wrap" style="margin-top: 12px;">
+        <div id="earnapp-search-result-wrap" style="margin-top: 12px">
           <table>
             <thead>
               <tr>
@@ -521,13 +618,12 @@
             </thead>
             <tbody id="earnappSearchResult"></tbody>
           </table>
-          <p id="earnappSearchMsg" style="font-size: 12px; color: #888; margin: 8px 0 0;"></p>
+          <p
+            id="earnappSearchMsg"
+            style="font-size: 12px; color: #888; margin: 8px 0 0"
+          ></p>
         </div>
       </section>
-    </div>
-
-    <div id="loadingOverlay" class="loading-overlay" aria-hidden="true">
-      <div class="loading-spinner" role="status" aria-label="Loading"></div>
     </div>
 
     <footer class="footer-out">
@@ -556,27 +652,27 @@
 
     <script>
       const API = "";
-      let loadingCount = 0;
-      function setLoading(show) {
-        if (show) {
-          loadingCount++;
-          document.getElementById("loadingOverlay").classList.add("show");
-        } else {
-          loadingCount = Math.max(0, loadingCount - 1);
-          if (loadingCount === 0) document.getElementById("loadingOverlay").classList.remove("show");
-        }
-      }
       async function logout() {
-        await fetch("/api/logout", { method: "POST", credentials: "same-origin" });
+        await fetch("/api/logout", {
+          method: "POST",
+          credentials: "same-origin",
+        });
         window.location.href = "/";
       }
       function switchTab(name) {
-        document.querySelectorAll(".tab").forEach((t) => t.classList.toggle("active", t.dataset.tab === name));
-        document.querySelectorAll(".tab-panel").forEach((p) => p.classList.toggle("active", p.id === "panel-" + name));
+        document
+          .querySelectorAll(".tab")
+          .forEach((t) => t.classList.toggle("active", t.dataset.tab === name));
+        document
+          .querySelectorAll(".tab-panel")
+          .forEach((p) =>
+            p.classList.toggle("active", p.id === "panel-" + name),
+          );
         if (name === "earnapp-search") searchEarnAppNodes();
       }
       function clearOutput() {
         const el = document.getElementById("out");
+        outAccum = "";
         el.textContent = "";
         el.classList.remove("err");
       }
@@ -584,7 +680,15 @@
         if (text == null || text === "") return "";
         const s = String(text);
         const ansiRe = /\x1b\[([0-9;]*)m/g;
-        const fg = { 31: "ansi-red", 32: "ansi-green", 33: "ansi-yellow", 34: "ansi-blue", 35: "ansi-magenta", 36: "ansi-cyan", 37: "ansi-white" };
+        const fg = {
+          31: "ansi-red",
+          32: "ansi-green",
+          33: "ansi-yellow",
+          34: "ansi-blue",
+          35: "ansi-magenta",
+          36: "ansi-cyan",
+          37: "ansi-white",
+        };
         let html = "";
         let stack = [];
         let lastIndex = 0;
@@ -595,7 +699,10 @@
           const codes = m[1].split(";").filter(Boolean).map(Number);
           stack = [];
           for (const c of codes) {
-            if (c === 0) { stack = []; break; }
+            if (c === 0) {
+              stack = [];
+              break;
+            }
             if (c === 1) stack.push("ansi-bold");
             else if (c === 2) stack.push("ansi-dim");
             else if (fg[c]) stack.push(fg[c]);
@@ -607,15 +714,28 @@
         if (stack.length) html += "</span>";
         return html;
       }
+      let outAccum = "";
       function out(msg, isErr) {
         const el = document.getElementById("out");
         const str = msg == null ? "" : String(msg);
+        outAccum = str;
         el.innerHTML = ansiToHtml(str);
         el.classList.toggle("err", !!isErr);
+        el.scrollTop = el.scrollHeight;
+      }
+      function outAppend(msg, isErr) {
+        const el = document.getElementById("out");
+        outAccum += msg == null ? "" : String(msg);
+        el.innerHTML = ansiToHtml(outAccum);
+        el.classList.toggle("err", !!isErr);
+        el.scrollTop = el.scrollHeight;
       }
       async function get(path) {
         const r = await fetch(API + path, { credentials: "same-origin" });
-        if (r.status === 401) { window.location.href = "/"; return {}; }
+        if (r.status === 401) {
+          window.location.href = "/";
+          return {};
+        }
         return r.json();
       }
       async function post(path, body) {
@@ -625,23 +745,64 @@
           body: typeof body === "string" ? body : JSON.stringify(body || {}),
           credentials: "same-origin",
         });
-        if (r.status === 401) { window.location.href = "/"; return {}; }
+        if (r.status === 401) {
+          window.location.href = "/";
+          return {};
+        }
         return r.json();
       }
-      async function run(args) {
-        out("Running: " + args.join(" ") + " ...");
-        setLoading(true);
+      async function runStream(args) {
+        out("Running: " + args.join(" ") + " ...\n");
         try {
-          const res = await post("/api/exec", { args });
-          out(res.output || (res.ok ? "Done." : "Error."), !res.ok);
-          const nodeActions = ["--setup-node", "--start-all", "--stop-all", "--delete-all", "--start-node", "--stop-node", "--delete-node"];
-          if (res.ok && nodeActions.some((a) => args.includes(a))) await loadNodes();
-          if (res.ok && args.includes("--setup-node")) await loadProxies();
+          const r = await fetch(API + "/api/exec-stream", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ args }),
+            credentials: "same-origin",
+          });
+          if (r.status === 401) {
+            window.location.href = "/";
+            return false;
+          }
+          if (!r.ok) {
+            outAppend("Error: " + r.status + " " + r.statusText, true);
+            return false;
+          }
+          const reader = r.body.getReader();
+          const decoder = new TextDecoder();
+          let full = "";
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            const chunk = decoder.decode(value, { stream: true });
+            full += chunk;
+            outAppend(chunk, false);
+          }
+          const ok = /\[Exit: 0\]/.test(full);
+          const nodeActions = [
+            "--setup-node",
+            "--start-all",
+            "--stop-all",
+            "--delete-all",
+            "--start-node",
+            "--stop-node",
+            "--delete-node",
+          ];
+          if (ok && nodeActions.some((a) => args.includes(a)))
+            await loadNodes();
+          if (ok && args.includes("--setup-node")) await loadProxies();
+          return ok;
         } catch (e) {
-          out("Error: " + e.message, true);
-        } finally {
-          setLoading(false);
+          const msg =
+            e.message === "Failed to fetch"
+              ? "Failed to fetch. Is the server running? Open http://127.0.0.1:8765"
+              : "Error: " + e.message;
+          outAppend(msg, true);
+          return false;
         }
+      }
+      async function run(args) {
+        await runStream(args);
       }
       let nodesList = [];
       let nodeCurrentPage = 1;
@@ -653,33 +814,55 @@
 
       function renderPagination(containerId, info, onPageChange) {
         const el = document.getElementById(containerId);
-        if (!el || !info || info.pages <= 1) { if (el) el.innerHTML = ""; return; }
+        if (!el || !info || info.pages <= 1) {
+          if (el) el.innerHTML = "";
+          return;
+        }
         const prevDisabled = info.page <= 1 ? "disabled" : "";
         const nextDisabled = info.page >= info.pages ? "disabled" : "";
         el.innerHTML =
-          '<button ' + prevDisabled + ' onclick="void 0" class="pg-prev">Prev</button>' +
-          '<span>Page ' + info.page + ' / ' + info.pages + ' (' + info.total + ' total)</span>' +
-          '<button ' + nextDisabled + ' onclick="void 0" class="pg-next">Next</button>';
-        el.querySelector(".pg-prev").onclick = function () { if (info.page > 1) onPageChange(info.page - 1); };
-        el.querySelector(".pg-next").onclick = function () { if (info.page < info.pages) onPageChange(info.page + 1); };
+          "<button " +
+          prevDisabled +
+          ' onclick="void 0" class="pg-prev">Prev</button>' +
+          "<span>Page " +
+          info.page +
+          " / " +
+          info.pages +
+          " (" +
+          info.total +
+          " total)</span>" +
+          "<button " +
+          nextDisabled +
+          ' onclick="void 0" class="pg-next">Next</button>';
+        el.querySelector(".pg-prev").onclick = function () {
+          if (info.page > 1) onPageChange(info.page - 1);
+        };
+        el.querySelector(".pg-next").onclick = function () {
+          if (info.page < info.pages) onPageChange(info.page + 1);
+        };
       }
 
       function searchEarnAppNodes() {
-        const term = (document.getElementById("earnappSearchInput").value || "").trim();
+        const term = (
+          document.getElementById("earnappSearchInput").value || ""
+        ).trim();
         const tbody = document.getElementById("earnappSearchResult");
         const msgEl = document.getElementById("earnappSearchMsg");
         if (!term) {
-          tbody.innerHTML = '<tr><td colspan="5" style="color:#888">Enter EarnApp Node ID (e.g. sdk-node-ec36428689fe3baacfffcc3e35bee8b0) then click Search.</td></tr>';
+          tbody.innerHTML =
+            '<tr><td colspan="5" style="color:#888">Enter EarnApp Node ID (e.g. sdk-node-ec36428689fe3baacfffcc3e35bee8b0) then click Search.</td></tr>';
           msgEl.textContent = "";
           return;
         }
         const lower = term.toLowerCase();
         const matched = nodesList.filter((n) => {
-          const earnapp = (n.meta && n.meta.earnapp_link) ? String(n.meta.earnapp_link) : "";
+          const earnapp =
+            n.meta && n.meta.earnapp_link ? String(n.meta.earnapp_link) : "";
           return earnapp.toLowerCase().includes(lower);
         });
         if (matched.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="5" style="color:#888">No nodes found with EarnApp link containing this string.</td></tr>';
+          tbody.innerHTML =
+            '<tr><td colspan="5" style="color:#888">No nodes found with EarnApp link containing this string.</td></tr>';
           msgEl.textContent = "No nodes found.";
         } else {
           tbody.innerHTML = matched
@@ -707,11 +890,9 @@
       }
       async function deleteProxyFromEarnApp(proxy) {
         if (!proxy || !confirm("Delete this proxy and its node?")) return;
-        setLoading(true);
         try {
-          const res = await post("/api/proxy/remove", { proxies: [proxy] });
-          out(res.output, !res.ok);
-          if (res.ok) {
+          const ok = await runStream(["--remove-proxy", proxy]);
+          if (ok) {
             await loadNodes();
             await loadProxies();
             searchEarnAppNodes();
@@ -719,16 +900,26 @@
         } catch (e) {
           out("Error: " + e.message, true);
         } finally {
-          setLoading(false);
         }
       }
       async function loadNodes() {
-        setLoading(true);
         try {
-          const statusFilter = document.getElementById("nodeStatusFilter").value || "all";
+          const statusFilter =
+            document.getElementById("nodeStatusFilter").value || "all";
           const sortDir = nodeSortDesc ? "desc" : "asc";
-          const nodeSearch = (document.getElementById("nodeSearchInput").value || "").trim();
-          const params = "?status=" + statusFilter + "&page=" + nodeCurrentPage + "&per_page=" + nodePerPage + "&sort_dir=" + sortDir + (nodeSearch ? "&search=" + encodeURIComponent(nodeSearch) : "");
+          const nodeSearch = (
+            document.getElementById("nodeSearchInput").value || ""
+          ).trim();
+          const params =
+            "?status=" +
+            statusFilter +
+            "&page=" +
+            nodeCurrentPage +
+            "&per_page=" +
+            nodePerPage +
+            "&sort_dir=" +
+            sortDir +
+            (nodeSearch ? "&search=" + encodeURIComponent(nodeSearch) : "");
           const data = await get("/api/nodes" + params);
           const arrow = document.getElementById("nodeSortArrow");
           if (arrow) arrow.textContent = nodeSortDesc ? "▼" : "▲";
@@ -752,11 +943,17 @@
               })
               .join("") ||
             '<tr><td colspan="5">No nodes. Add proxies in the Manage proxies tab to create nodes.</td></tr>';
-          renderPagination("nodesPagination", {page: data.page, pages: data.pages, total: data.total}, function (p) { nodeCurrentPage = p; loadNodes(); });
+          renderPagination(
+            "nodesPagination",
+            { page: data.page, pages: data.pages, total: data.total },
+            function (p) {
+              nodeCurrentPage = p;
+              loadNodes();
+            },
+          );
         } catch (e) {
           out("Load nodes: " + e.message, true);
         } finally {
-          setLoading(false);
         }
       }
       function openNodeModal(nodeId) {
@@ -807,11 +1004,26 @@
       async function runSelected(action) {
         const ids = getSelectedNodeIds();
         if (!ids.length) {
-          out("Select at least one node (check the box in the first column).", true);
+          out(
+            "Select at least one node (check the box in the first column).",
+            true,
+          );
           return;
         }
-        if (action === "delete" && !confirm("Delete " + ids.length + " selected node(s)?")) return;
-        setLoading(true);
+        if (
+          action === "delete" &&
+          !confirm("Delete " + ids.length + " selected node(s)?")
+        )
+          return;
+        if (
+          action === "deleteProxy" &&
+          !confirm(
+            "Delete proxy and node for " +
+              ids.length +
+              " selected item(s)? (Proxy will be removed from the list)",
+          )
+        )
+          return;
         try {
           if (action === "start") {
             await run(["--start-node"].concat(ids));
@@ -819,6 +1031,19 @@
             await run(["--stop-node"].concat(ids));
           } else if (action === "delete") {
             await run(["--delete-node"].concat(ids));
+          } else if (action === "deleteProxy") {
+            const proxies = ids
+              .map((id) => nodesList.find((n) => n.id === id)?.proxy)
+              .filter(Boolean);
+            if (proxies.length === 0) {
+              out("Could not find proxy for selected node(s).", true);
+              return;
+            }
+            const ok = await runStream(["--remove-proxy"].concat(proxies));
+            if (ok) {
+              await loadNodes();
+              await loadProxies();
+            }
           } else if (action === "restart") {
             out("Restarting " + ids.length + " node(s)...");
             await run(["--stop-node"].concat(ids));
@@ -826,14 +1051,12 @@
           }
           await loadNodes();
         } finally {
-          setLoading(false);
         }
       }
       function escapeJs(s) {
         return String(s).replace(/\\/g, "\\\\").replace(/'/g, "\\'");
       }
       async function showLogs(nodeId, container) {
-        setLoading(true);
         try {
           const r = await fetch(
             API +
@@ -848,12 +1071,10 @@
         } catch (e) {
           out("Logs error: " + e.message, true);
         } finally {
-          setLoading(false);
         }
       }
       async function restartContainer(nodeId, container) {
         out("Restarting " + container + " ...");
-        setLoading(true);
         try {
           const res = await post("/api/node/" + nodeId + "/restart-container", {
             container: container,
@@ -863,15 +1084,22 @@
         } catch (e) {
           out("Error: " + e.message, true);
         } finally {
-          setLoading(false);
         }
       }
       async function loadProxies() {
-        setLoading(true);
         try {
           const sortDir = proxySortDesc ? "desc" : "asc";
-          const proxySearch = (document.getElementById("proxySearchInput").value || "").trim();
-          const params = "?page=" + proxyCurrentPage + "&per_page=" + proxyPerPage + "&sort_dir=" + sortDir + (proxySearch ? "&search=" + encodeURIComponent(proxySearch) : "");
+          const proxySearch = (
+            document.getElementById("proxySearchInput").value || ""
+          ).trim();
+          const params =
+            "?page=" +
+            proxyCurrentPage +
+            "&per_page=" +
+            proxyPerPage +
+            "&sort_dir=" +
+            sortDir +
+            (proxySearch ? "&search=" + encodeURIComponent(proxySearch) : "");
           const data = await get("/api/proxies" + params);
           const arrow = document.getElementById("proxySortArrow");
           if (arrow) arrow.textContent = proxySortDesc ? "▼" : "▲";
@@ -880,26 +1108,33 @@
           if (selectAll) selectAll.checked = false;
           tbody.innerHTML =
             (data.proxies || [])
-              .map(
-                (item) => {
-                  const p = typeof item === "string" ? item : item.proxy;
-                  const createdAt = (typeof item === "object" && item.created_at) ? item.created_at : "";
-                  const enc = btoa(unescape(encodeURIComponent(p)));
-                  return `
+              .map((item) => {
+                const p = typeof item === "string" ? item : item.proxy;
+                const createdAt =
+                  typeof item === "object" && item.created_at
+                    ? item.created_at
+                    : "";
+                const enc = btoa(unescape(encodeURIComponent(p)));
+                return `
           <tr>
             <td><input type="checkbox" class="proxy-cb" data-proxy="${escapeHtml(enc)}"></td>
             <td class="proxy">${escapeHtml(p)}</td>
             <td class="date">${formatDate(createdAt)}</td>
           </tr>
         `;
-                },
-              )
+              })
               .join("") || '<tr><td colspan="3">No proxies.</td></tr>';
-          renderPagination("proxiesPagination", {page: data.page, pages: data.pages, total: data.total}, function (p) { proxyCurrentPage = p; loadProxies(); });
+          renderPagination(
+            "proxiesPagination",
+            { page: data.page, pages: data.pages, total: data.total },
+            function (p) {
+              proxyCurrentPage = p;
+              loadProxies();
+            },
+          );
         } catch (e) {
           out("Load proxies: " + e.message, true);
         } finally {
-          setLoading(false);
         }
       }
       function escapeHtml(s) {
@@ -917,8 +1152,22 @@
           const ss = String(d.getSeconds()).padStart(2, "0");
           const dd = String(d.getDate()).padStart(2, "0");
           const mo = String(d.getMonth() + 1).padStart(2, "0");
-          return hh + ":" + mm + ":" + ss + " " + dd + "/" + mo + "/" + d.getFullYear();
-        } catch (_) { return "—"; }
+          return (
+            hh +
+            ":" +
+            mm +
+            ":" +
+            ss +
+            " " +
+            dd +
+            "/" +
+            mo +
+            "/" +
+            d.getFullYear()
+          );
+        } catch (_) {
+          return "—";
+        }
       }
       function parseAndValidateProxyList(text) {
         const lines = (text || "")
@@ -950,11 +1199,7 @@
                 invalid.slice(0, 3).join(", "),
               true,
             );
-          else
-            setValidateMsg(
-              "Enter at least one proxy (one per line).",
-              true,
-            );
+          else setValidateMsg("Enter at least one proxy (one per line).", true);
           return;
         }
         if (invalid.length)
@@ -962,21 +1207,18 @@
             "Skipped " + invalid.length + " invalid line(s).",
             true,
           );
-        setLoading(true);
         try {
-          const res = await post("/api/proxy/add", { proxies: valid });
-          out(res.output, !res.ok);
-          if (res.ok) {
+          const ok = await runStream(["--add-proxy"].concat(valid));
+          if (ok) {
             ta.value = "";
             setValidateMsg("Added " + valid.length + " proxy(ies).", false);
             await loadNodes();
             await loadProxies();
-          } else setValidateMsg(res.output || "Error", true);
+          } else setValidateMsg("Error", true);
         } catch (e) {
           out("Error: " + e.message, true);
           setValidateMsg("Error: " + e.message, true);
         } finally {
-          setLoading(false);
         }
       }
       function getSelectedProxies() {
@@ -991,27 +1233,30 @@
           .filter(Boolean);
       }
       function toggleSelectAllProxies(headerCb) {
-        document.querySelectorAll(".proxy-cb").forEach((cb) => (cb.checked = !!headerCb.checked));
+        document
+          .querySelectorAll(".proxy-cb")
+          .forEach((cb) => (cb.checked = !!headerCb.checked));
       }
       async function deleteSelectedProxies() {
         const list = getSelectedProxies();
         if (!list.length) {
-          out("Select at least one proxy (check the box in the first column).", true);
+          out(
+            "Select at least one proxy (check the box in the first column).",
+            true,
+          );
           return;
         }
-        if (!confirm("Delete " + list.length + " proxy(ies) and their nodes?")) return;
-        setLoading(true);
+        if (!confirm("Delete " + list.length + " proxy(ies) and their nodes?"))
+          return;
         try {
-          const res = await post("/api/proxy/remove", { proxies: list });
-          out(res.output, !res.ok);
-          if (res.ok) {
+          const ok = await runStream(["--remove-proxy"].concat(list));
+          if (ok) {
             await loadNodes();
             await loadProxies();
           }
         } catch (e) {
           out("Error: " + e.message, true);
         } finally {
-          setLoading(false);
         }
       }
       loadNodes();
