@@ -5,3 +5,4 @@ web/server.log
 web/config.json
 __pycache__/
 proxies.txt
+node_modules/
