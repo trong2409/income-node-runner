@@ -530,6 +530,16 @@ case "$1" in
   --stop-all)
     run_all_nodes "stop" "--delete"
     ;;
+  --restart-all)
+    echo "Restarting all nodes (stop then start)..."
+    run_all_nodes "stop" "--delete"
+    run_all_nodes "start" "--start"
+    ;;
+  --restart-node)
+    shift
+    run_nodes "stop" "--delete" "$@"
+    run_nodes "start" "--start" "$@"
+    ;;
   --update-properties)
     update_properties
     ;;
@@ -571,6 +581,8 @@ case "$1" in
     echo "  --start-all                         Start all nodes"
     echo "  --stop-node <id> [ids...]           Stop one or more nodes"
     echo "  --stop-all                          Stop all nodes"
+    echo "  --restart-node <id> [ids...]        Restart one or more nodes (stop + start)"
+    echo "  --restart-all                       Restart all nodes (stop + start)"
     echo "  --update-properties                 Update properties.conf in all nodes"
     echo "  --collect-earnapp                   Collect earnapp links from all nodes"
     echo "  --container-logs <id> <container> [--tail N]  Show container logs"

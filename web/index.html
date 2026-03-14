@@ -487,6 +487,7 @@
           </button>
           <button onclick="run(['--start-all'])">Start all</button>
           <button onclick="run(['--stop-all'])">Stop all</button>
+          <button onclick="run(['--restart-all'])">Restart all</button>
           <button class="danger" onclick="run(['--delete-all'])">
             Delete all
           </button>
@@ -744,9 +745,11 @@
             "--setup-node",
             "--start-all",
             "--stop-all",
+            "--restart-all",
             "--delete-all",
             "--start-node",
             "--stop-node",
+            "--restart-node",
             "--delete-node",
           ];
           if (ok && nodeActions.some((a) => args.includes(a)))
@@ -891,6 +894,12 @@
         <p><span class="label">EarnApp:</span></p>${earnappHtml}
         <p class="label">Containers:</p>
         <div class="modal-containers">${containersHtml}</div>
+        <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+          <button onclick="closeNodeModal();run(['--start-node','${nodeId}'])">Start</button>
+          <button onclick="closeNodeModal();run(['--stop-node','${nodeId}'])">Stop</button>
+          <button onclick="closeNodeModal();restartNode('${nodeId}')">Restart node</button>
+          <button class="danger" onclick="closeNodeModal();run(['--delete-node','${nodeId}'])">Delete</button>
+        </div>
       `;
         document.getElementById("nodeModal").classList.add("show");
       }
@@ -898,9 +907,8 @@
         document.getElementById("nodeModal").classList.remove("show");
       }
       async function restartNode(nodeId) {
-        out("Restarting node-" + nodeId + " (stop then start)...");
-        await run(["--stop-node", nodeId]);
-        await run(["--start-node", nodeId]);
+        out("Restarting node-" + nodeId + "...");
+        await run(["--restart-node", nodeId]);
         await loadNodes();
       }
       function getSelectedNodeIds() {
@@ -958,8 +966,7 @@
             }
           } else if (action === "restart") {
             out("Restarting " + ids.length + " node(s)...");
-            await run(["--stop-node"].concat(ids));
-            await run(["--start-node"].concat(ids));
+            await run(["--restart-node"].concat(ids));
           }
           await loadNodes();
         } finally {

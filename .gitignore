@@ -6,3 +6,4 @@ web/config.json
 __pycache__/
 proxies.txt
 node_modules/
+node-test/
