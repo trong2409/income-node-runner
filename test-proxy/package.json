@@ -1,0 +1,12 @@
+{
+  "name": "test-proxy",
+  "version": "1.0.0",
+  "description": "Proxy tester for income-node-runner using Puppeteer + EarnApp",
+  "main": "test.js",
+  "scripts": {
+    "test": "node test.js"
+  },
+  "dependencies": {
+    "puppeteer": "^22.0.0"
+  }
+}

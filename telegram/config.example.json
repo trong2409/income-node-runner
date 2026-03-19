@@ -1,0 +1,6 @@
+{
+  "bot_token": "userid:token",
+  "allowed_users": [
+    "userid"
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "name": "add-node",
+  "version": "1.0.0",
+  "description": "Add EarnApp nodes to accounts using Puppeteer",
+  "main": "add.js",
+  "scripts": {
+    "start": "node add.js"
+  },
+  "dependencies": {
+    "puppeteer": "^22.0.0"
+  }
+}

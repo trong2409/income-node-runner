@@ -1,0 +1,17 @@
+# Proxy list to test — one proxy per line
+# Format: protocol://username:password@ip:port
+# Lines starting with # and empty lines are skipped
+#
+# Examples:
+# socks5://user:pass@1.2.3.4:1080
+# http://user:pass@5.6.7.8:8080
+http://14a4cc9651e3b:63490a7182@89.46.3.77:12323
+http://14a4cc9651e3b:63490a7182@89.46.3.160:12323
+http://14a4cc9651e3b:63490a7182@89.46.3.185:12323
+http://14a4cc9651e3b:63490a7182@89.46.3.75:12323
+http://14a4cc9651e3b:63490a7182@89.46.3.239:12323
+http://14a4cc9651e3b:63490a7182@89.46.3.73:12323
+http://14a4cc9651e3b:63490a7182@89.46.3.53:12323
+http://14a4cc9651e3b:63490a7182@89.46.3.33:12323
+http://14a4cc9651e3b:63490a7182@89.46.3.68:12323
+http://14a4cc9651e3b:63490a7182@89.46.3.246:12323

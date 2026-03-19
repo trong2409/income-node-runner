@@ -5,3 +5,15 @@ web/server.log
 web/config.json
 __pycache__/
 proxies.txt
+node_modules/
+node-test/
+
+# add-node
+add-node/result.txt
+add-node/input-links.txt
+add-node/cookies/
+
+# test-proxy
+test-proxy/result.txt
+test-proxy/input-proxy.txt
+test-proxy/cookie.json
